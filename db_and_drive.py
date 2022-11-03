@@ -10,6 +10,3 @@ db_kolam = deta.Base("kolam")
 db_monitoring = deta.Base("monitoring")
 db_pangan = deta.Base("pangan")
 db_pemberipakan = deta.Base("pemberipakan")
-
-#Image Server
-drive = deta.Drive("images") # access to your drive

@@ -1,3 +1,4 @@
 fastapi
 deta
 python-multipart
+jinja2
