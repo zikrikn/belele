@@ -2,11 +2,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware # Untuk CORS Middleware beda tempat
 from schemas.admin import Admin
 from schemas.kolam import *
-from db_and_drive import *
+from db import *
 
 #Fokus untuk membuat REST API-nya buat backend
 
-app = FastAPI()
+app = FastAPI(
+    title="LeMES",
+    version="1.0",
+    prefix="/api"
+)
 
 @app.get("/hi")
 async def main():
