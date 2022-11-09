@@ -1,11 +1,11 @@
-from fastapi import FastAPI, File, UploadFile 
-# File dan UploadFile untuk Drive
-# For Drive
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi import FastAPI, HTTPException, Security
 from fastapi.middleware.cors import CORSMiddleware # Untuk CORS Middleware beda tempat. Pakai Fetch & JS untuk implementasinya
-from schemas.admin import Admin
-from schemas.kolam import *
+from schemas.admin import *
+from schemas.pemberipakan import *
 from db import *
+#Auth user
+from auth import Auth
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 # Fokus untuk membuat REST API-nya buat backend
 
@@ -15,8 +15,9 @@ app = FastAPI(
     prefix="/api"
 )
 
-# For Drive Images
-drive = deta.Drive("images")
+#Auto handler
+security = HTTPBearer()
+auth_handler = Auth()
 
 @app.get("/hi")
 async def main():
@@ -26,35 +27,55 @@ async def main():
 def read_root():
     return {"Hello": "World"}
 
-@app.get("/items/{item_id}")
-def read_item(item_id: int):
-    return {"item_id": item_id}
+#Making real API
 
-@app.post("/users", status_code=201)
-def create_user(user: Admin):
-    pengguna = db_admin.put(user.dict())
-    return pengguna
+@app.post("/admin")
+async def create_item(admin: Admin):
+    admins =  db_admin.put(admin.dict()) #Ini put/create ke database
+    return admins
 
-@app.get("/imgs", response_class=HTMLResponse)
-def render():
-    return """
-    <form action="/upload" enctype="multipart/form-data" method="post">
-        <input name="file" type="file">
-        <input type="submit">
-    </form>
-    """
+#Membuat auth untuk login
 
-@app.post("/upload")
-def upload_img(file: UploadFile = File(...)):
-    name = file.filename
-    f = file.file
-    res = drive.put(name, f)
-    return res
+#Sign up
+@app.post('/signup')
+def signup(user_details: PemberiPakan):
+    if db_pemberipakan.get(user_details.key) != None:
+        return 'Account already exists'
+    try:
+        hashed_password = auth_handler.encode_password(user_details.PasswordPP)
+        user = {'key': user_details.key, 'password': hashed_password}
+        return db_pemberipakan.put(user)
+    except:
+        error_msg = 'Failed to signup user'
+        return error_msg
 
-@app.get("/download/{name}")
-def download_img(name: str):
-    res = drive.get(name)
-    return StreamingResponse(res.iter_chunks(1024), media_type="image/png")
+@app.post('/login')
+def login(user_details: PemberiPakan):
+    user = db_pemberipakan.get(user_details.key)
+    if (user is None):
+        return HTTPException(status_code=401, detail='Invalid username')
+    if (not auth_handler.verify_password(user_details.PasswordPP, user['password'])):
+        return HTTPException(status_code=401, detail='Invalid password')
+    
+    access_token = auth_handler.encode_token(user['key'])
+    refresh_token = auth_handler.encode_refresh_token(user['key'])
+    return {'access_token': access_token, 'refresh_token': refresh_token}
+
+@app.get('/refresh_token')
+def refresh_token(credentials: HTTPAuthorizationCredentials = Security(security)):
+    refresh_token = credentials.credentials
+    new_token = auth_handler.refresh_token(refresh_token)
+    return {'access_token': new_token}
+
+@app.post('/secret')
+def secret_data(credentials: HTTPAuthorizationCredentials = Security(security)):
+    token = credentials.credentials
+    if(auth_handler.decode_token(token)):
+        return 'Top Secret data only authorized users can access this info'
+
+@app.get('/notsecret')
+def not_secret_data():
+    return 'Not secret data'
 
 app.add_middleware(
     CORSMiddleware,

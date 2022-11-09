@@ -5,3 +5,5 @@ class Monintoring(BaseModel):
     AdminID: str
     KolamID: str
     PemberiPakanID: str
+
+    #deta base

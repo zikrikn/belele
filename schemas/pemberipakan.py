@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
 class PemberiPakan(BaseModel):
-    PemberiPakanID: str
+    key: str #PemberiPakanID
     NamaPemberiPakan: str
     PasswordPP: str
