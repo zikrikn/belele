@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware # Untuk CORS Middleware beda tempat. Pakai Fetch & JS untuk implementasinya OR using NEXT.js
+from fastapi.responses import RedirectResponse 
 
 #Routers
 from routers.admin import admin_router
@@ -7,7 +8,7 @@ from routers.both import both_router
 from routers.user import user_router
 
 #Auth
-from routers.auth_router import *
+from auth_subpackage.auth_router import *
 
 #Database
 from db import *
@@ -18,9 +19,9 @@ app = FastAPI(
     prefix="/api"
 )
 
-@app.get("/")
-async def read_root():
-    return {"Hello": "World"}
+@app.get("/", include_in_schema=False)
+async def redirect_docs():
+    return RedirectResponse("https://api.lemes.my.id/docs")
 
 app.include_router(admin_router)
 app.include_router(both_router)

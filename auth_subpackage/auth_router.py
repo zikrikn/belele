@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from auth_class import Auth
+from auth_subpackage.auth_class import Auth
 from schemas.pemberipakan import *
 from db import *
 
