@@ -2,12 +2,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware # Untuk CORS Middleware beda tempat. Pakai Fetch & JS untuk implementasinya OR using NEXT.js
 
 #Routers
-from .routers.admin import admin_router
-from .routers.both import both_router
-from .routers.user import user_router
+from routers.admin import admin_router
+from routers.both import both_router
+from routers.user import user_router
 
 #Auth
-from .auth.auth_router import *
+from auth.auth_router import *
 
 #Database
 from db import *
