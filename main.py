@@ -12,9 +12,6 @@ from .auth.auth_router import *
 #Database
 from db import *
 
-
-# Fokus untuk membuat REST API-nya buat backend
-
 app = FastAPI(
     title="LeMES",
     version="1.0",
