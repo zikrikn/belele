@@ -7,7 +7,7 @@ from routers.both import both_router
 from routers.user import user_router
 
 #Auth
-from auth.auth_router import *
+from auth_router import *
 
 #Database
 from db import *

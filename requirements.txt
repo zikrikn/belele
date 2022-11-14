@@ -1,5 +1,5 @@
 fastapi
 deta
 #python-multipart
-#pyjwt
-#passlib[bcrypt]
+pyjwt
+passlib[bcrypt]

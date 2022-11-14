@@ -1,4 +1,0 @@
-fastapi
-deta
-pyjwt
-passlib[bcrypt]
