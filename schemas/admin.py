@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
 class Admin(BaseModel):
-    AdminID: str
+    key: str #AdminID
     NamaAdmin: str
     PasswrodAdmin: str

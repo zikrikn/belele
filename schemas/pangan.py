@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 class Pangan(BaseModel):
-    PanganID: str
+    key: str #PanganID
     JumlahStock: int
     TakaranPangan: int
     RestockPangan: int
