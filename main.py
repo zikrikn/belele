@@ -18,14 +18,14 @@ app = FastAPI(
     prefix="/api"
 )
 
+@app.get("/")
+async def read_root():
+    return {"Hello": "World"}
+
 app.include_router(admin_router)
 app.include_router(both_router)
 app.include_router(user_router)
 app.include_router(auth_router)
-
-@app.get("/")
-async def read_root():
-    return {"Hello": "World"}
 
 @auth_router.post('/secret')
 async def secret_data(credentials: HTTPAuthorizationCredentials = Security(security)):
