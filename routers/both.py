@@ -4,15 +4,15 @@ both_router = APIRouter()
 
 #Berita
 @both_router.get("/berita", tags=["both"])
-async def berita():
+def berita():
     return "Berita"
 
 #Pedoman
 @both_router.get("/pedoman", tags=("both"))
-async def pedoman():
+def pedoman():
     return "Pedoman"
 
 #Logout
 @both_router.post("/logout", tags=("both"))
-async def logout():
+def logout():
     return "Logout"

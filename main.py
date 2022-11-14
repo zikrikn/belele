@@ -19,7 +19,7 @@ app = FastAPI(
 )
 
 @app.get("/")
-async def read_root():
+def read_root():
     return {"Hello": "World"}
 
 app.include_router(admin_router)
@@ -28,13 +28,13 @@ app.include_router(user_router)
 app.include_router(auth_router)
 
 @auth_router.post('/secret')
-async def secret_data(credentials: HTTPAuthorizationCredentials = Security(security)):
+def secret_data(credentials: HTTPAuthorizationCredentials = Security(security)):
     token = credentials.credentials
     if(auth_handler.decode_token(token)):
         return 'Top Secret data only authorized users can access this info'
 
 @auth_router.get('/notsecret')
-async def not_secret_data():
+def not_secret_data():
     return 'Not secret data'
 
 app.add_middleware(
