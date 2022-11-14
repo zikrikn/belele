@@ -1,4 +1,8 @@
 from fastapi import APIRouter
+from schemas.beritadanpedoman import *
+from schames.pemberipakan import *
+from schames.admin import *
+from db import *
 
 both_router = APIRouter(tags=["Both"])
 

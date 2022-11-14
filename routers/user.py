@@ -1,4 +1,9 @@
 from fastapi import APIRouter
+from schemas.pemberipakan import *
+from schemas.kolam import *
+from schames.notifikasi import *
+from schames.pangan import *
+from db import *
 
 #Sepertinya tidak berguna soalnya sudah ada di module auth-router.py
 
@@ -17,7 +22,7 @@ async def takaran_lele():
 #notifikasi
 @user_router.get("/notifikasi/{id_user}")
 async def notifikasi(id_user: str):
-    return "Notifikasi {id_user}"
+    return {"Notifikasi": id_user}
 
 #profile admin - user
 @user_router.get("/profile/{id_user}")
