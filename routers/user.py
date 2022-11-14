@@ -2,29 +2,29 @@ from fastapi import APIRouter
 
 #Sepertinya tidak berguna soalnya sudah ada di module auth-router.py
 
-user_router = APIRouter()
+user_router = APIRouter(tags=["User"])
 
 #remindrestock
-@user_router.post("/restockpakan/", tags=["users"])
-def remindrestock():
+@user_router.post("/restockpakan/")
+async def remind_restock():
     return "Restock"
 
 #takaranlele
-@user_router.post("/inputkolamlele/", tags=("users"))
-def takaranlele():
+@user_router.post("/inputkolamlele/")
+async def takaran_lele():
     return "Takaran Lele"
 
 #notifikasi
-@user_router.get("/notifikasi/{id_user}", tags=("users"))
-def notifikasi(id_user: str):
+@user_router.get("/notifikasi/{id_user}")
+async def notifikasi(id_user: str):
     return "Notifikasi {id_user}"
 
 #profile admin - user
-@user_router.get("/profile/{id_user}", tags=("users"))
-def profile(id_user: str):
+@user_router.get("/profile/{id_user}")
+async def profile(id_user: str):
     return "Profile {id_user}"
 
 #search
-@user_router.get("/search/{something}", tags=("users"))
-def search(something: str):
+@user_router.get("/search/{something}")
+async def search(something: str):
     return "Search {something}"

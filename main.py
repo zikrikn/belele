@@ -7,7 +7,7 @@ from routers.both import both_router
 from routers.user import user_router
 
 #Auth
-from auth_router import *
+from routers.auth_router import *
 
 #Database
 from db import *
@@ -19,23 +19,13 @@ app = FastAPI(
 )
 
 @app.get("/")
-def read_root():
+async def read_root():
     return {"Hello": "World"}
 
 app.include_router(admin_router)
 app.include_router(both_router)
 app.include_router(user_router)
 app.include_router(auth_router)
-
-@auth_router.post('/secret')
-def secret_data(credentials: HTTPAuthorizationCredentials = Security(security)):
-    token = credentials.credentials
-    if(auth_handler.decode_token(token)):
-        return 'Top Secret data only authorized users can access this info'
-
-@auth_router.get('/notsecret')
-def not_secret_data():
-    return 'Not secret data'
 
 app.add_middleware(
     CORSMiddleware,

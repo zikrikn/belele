@@ -4,7 +4,7 @@ from auth_class import Auth
 from schemas.pemberipakan import *
 from db import *
 
-auth_router = APIRouter()
+auth_router = APIRouter(tags=["Auth"])
 
 #Auto handler
 security = HTTPBearer()
@@ -14,7 +14,7 @@ auth_handler = Auth()
 #!!!Tambahannya signup admin dan delete akun!!!
 
 @auth_router.post('/signup')
-def signup(user_details: PemberiPakan):
+async def signup(user_details: PemberiPakan):
     if db_pemberipakan.get(user_details.key) != None:
         return 'Account already exists'
     try:
@@ -26,7 +26,7 @@ def signup(user_details: PemberiPakan):
         return error_msg
 
 @auth_router.post('/login')
-def login(user_details: PemberiPakan):
+async def login(user_details: PemberiPakan):
     user = db_pemberipakan.get(user_details.key)
     if (user is None):
         return HTTPException(status_code=401, detail='Invalid username')
@@ -38,7 +38,7 @@ def login(user_details: PemberiPakan):
     return {'access_token': access_token, 'refresh_token': refresh_token}
 
 @auth_router.get('/refresh_token')
-def refresh_token(credentials: HTTPAuthorizationCredentials = Security(security)):
+async def refresh_token(credentials: HTTPAuthorizationCredentials = Security(security)):
     refresh_token = credentials.credentials
     new_token = auth_handler.refresh_token(refresh_token)
     return {'access_token': new_token}
