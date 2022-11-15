@@ -1,9 +1,10 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from schemas.pemberipakan import *
 from schemas.kolam import *
 from schemas.notifikasi import *
 from schemas.pangan import *
 from db import *
+from pydantic import ValidationError
 
 #Sepertinya tidak berguna soalnya sudah ada di module auth-router.py
 
@@ -11,7 +12,14 @@ user_router = APIRouter(tags=["User"])
 
 #takaranlele
 @user_router.post("/inputkolamlele", summary="Mengukur Tarakan Lele")
-async def takaran_leleIn(newKolam: Kolam):
+async def takaran_leleIn(newKolam: KolamDB):
+    req_kolam = db_kolam.fetch({'key': newKolam.key})
+    if len(req_kolam.items) != 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Data already exist"
+        )
+
     kolam = {"key": newKolam.key, 
         "JumlahLele": newKolam.JumlahLele,
         "UmurLele": newKolam.UmurLele,
@@ -20,19 +28,20 @@ async def takaran_leleIn(newKolam: Kolam):
     }
     hitungJumlah = newKolam.JumlahLele // newKolam.UmurLele
     kolam['TakaranPangan'] = hitungJumlah
-    return db_kolam.put(kolam)
+
+    try:
+        validated_new_profile = KolamDB(**kolam)
+        db_kolam.put(kolam)
+    except ValidationError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid input value"
+        )
+    return kolam
 
 #Sepertinya langsung post di POST aja
-@user_router.post("/restockin", response_model=RestockIn)
-async def menghitung_restock(newRestock: RestockIn, newKolam: Kolam):
-    JumlahLele = db_kolam.fetch({"key": newKolam.JumlahLele})
-    restock = {
-        "key": newKolam.key,
-        "JumlahPakan": newRestock.JumlahPakan,
-        "RestockPakan": newRestock.RestockPangan 
-    }
-    hitungRestockPerhari = JumlahLele
-    restock['RestockPakan'] = hitungRestockPerhari
+@user_router.post("/restock", summer)
+async def menghitung_restock():
     return restock
 
 #notifikasi

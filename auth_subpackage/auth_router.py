@@ -14,7 +14,7 @@ auth_handler = Auth()
 #!!!Tambahannya signup admin dan delete akun!!!
 
 @auth_router.post('/signup')
-async def signup(user_details: PemberiPakan):
+async def signup(user_details: PemberiPakanDB):
     if db_pemberipakan.get(user_details.key) != None:
         return 'Account already exists'
     try:
@@ -26,7 +26,7 @@ async def signup(user_details: PemberiPakan):
         return error_msg
 
 @auth_router.post('/login')
-async def login(user_details: PemberiPakan):
+async def login(user_details: PemberiPakanDB):
     user = db_pemberipakan.get(user_details.key)
     if (user is None):
         return HTTPException(status_code=401, detail='Invalid username')

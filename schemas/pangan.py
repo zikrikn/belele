@@ -5,6 +5,6 @@ class PanganDB(BaseModel):
     JumlahStock: int
 
 
-class RestockNew(Pangan):
+class RestockNew(PanganDB):
     TakaranPangan: int
     RestockPangan: int

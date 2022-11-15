@@ -23,12 +23,11 @@ class KolamDB(BaseModel):
     TanggalAwalTebarBibit: str
     TakaranPangan: int
 
-class Restock(BaseModel): #This in
+class RestockIn(BaseModel): #This Out
     key: str #Kolam.id
     JumlahPakan: int
-    RestockPangan: int
 
-class RestockOut(BaseModel): #This in
+class RestockOut(BaseModel): #This Out
     key: str #Kolam.id
     JumlahPakan: int
     RestockPangan: int
