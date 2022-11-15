@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-class Notifikasi(BaseModel):
+class NotifikasiDB(BaseModel):
     key: str #Notifikasi.ID
     NotifikasiRestockPakan: str
     NotifikasiRemindHarianDanTakaran: str

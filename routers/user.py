@@ -25,13 +25,13 @@ async def takaran_leleIn(newKolam: Kolam):
 #Sepertinya langsung post di POST aja
 @user_router.post("/restockin", response_model=RestockIn)
 async def menghitung_restock(newRestock: RestockIn, newKolam: Kolam):
-    kolam = db_kolam.get(newKolam.key)
+    JumlahLele = db_kolam.fetch({"key": newKolam.JumlahLele})
     restock = {
         "key": newKolam.key,
         "JumlahPakan": newRestock.JumlahPakan,
         "RestockPakan": newRestock.RestockPangan 
     }
-    hitungRestockPerhari = kolam['JumlahLele'] // kolam['UmurLele']
+    hitungRestockPerhari = JumlahLele
     restock['RestockPakan'] = hitungRestockPerhari
     return restock
 

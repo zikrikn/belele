@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-class Pangan(BaseModel):
+class PanganDB(BaseModel):
     key: str #PanganID
     JumlahStock: int
 
