@@ -1,8 +1,8 @@
 from fastapi import APIRouter
 from schemas.pemberipakan import *
 from schemas.kolam import *
-from schames.notifikasi import *
-from schames.pangan import *
+from schemas.notifikasi import *
+from schemas.pangan import *
 from db import *
 
 #Sepertinya tidak berguna soalnya sudah ada di module auth-router.py
@@ -10,23 +10,18 @@ from db import *
 user_router = APIRouter(tags=["User"])
 
 #takaranlele
-@user_router.post("/inputkolamlele", summary="Mengukur Tarakan Lele", response_model=Kolam)
+@user_router.post("/inputkolamlele", summary="Mengukur Tarakan Lele")
 async def takaran_leleIn(newKolam: Kolam):
-    newKolam1 = db_kolam.put(newKolam.dict())
-    return newKolam1
+    kolam = {"key": newKolam.key, 
+        "JumlahLele": newKolam.JumlahLele,
+        "UmurLele": newKolam.UmurLele,
+        "TanggalAwalTebarBibit": newKolam.TanggalAwalTebarBibit
+    }
+    hitungJumlah = newKolam.JumlahLele / newKolam.UmurLele
+    kolam.update({"TakaranPangan": hitungJumlah})
+    return kolam
 
-#jumlahpakan
-#! IN
-@user_router.post("/jumlahpanganin", summary="Menghitung Jumlah Pakan", response_model=JumlahPangan)
-async def Jumlah_Pangan(kolam_details: Kolam):
-    if db.kolam.get(kolam_details.key) != None:
-        jumlahLele = db_kolam.fetch({"JumlahLele": kolam_details.JumlahLele})
-        umurLele = db_kolam.fetch({"UmurLele": kolam_details.UmurLele})
-        UkuranTakar = jumlahLele / umurLele
-        hasilUkur = db_kolam.put({"key": kolam_details.key, "TakaranPangan": UkuranTakar})
-        return hasilUkur
-    else:
-        return "Data Invalid"
+#Sepertinya langsung post di POST aja
 
 @user_router.get("/jumlahpanganout")
 async def jumlahpakan_out(isiJumlahPangan: JumlahPangan):

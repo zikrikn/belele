@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from beritadanpedoman import *
+from schemas.beritadanpedoman import *
 from db import *
 
 admin_router = APIRouter(tags=["Admin"])
