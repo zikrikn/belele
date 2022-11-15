@@ -1,5 +1,6 @@
 fastapi
 deta
 #python-multipart
+#uvicorn
 pyjwt
 passlib[bcrypt]

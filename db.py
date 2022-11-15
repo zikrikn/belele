@@ -1,7 +1,12 @@
 from deta import Deta  # Import Deta
 
 # Initialize with a Project Key
-deta = Deta()
+'''
+Key Name kax8yf
+Key Description Project Key: kax8yf
+Project Key c08rolsw_ACgvH25t8UoevXnPHMqVWtFBwJ7rtYPN
+'''
+deta = Deta("c08rolsw_ACgvH25t8UoevXnPHMqVWtFBwJ7rtYPN")
 
 #DB - this is like a table 
 #sedangkan schames untuk isi dari database-nya

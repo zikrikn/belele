@@ -21,7 +21,7 @@ app = FastAPI(
 
 @app.get("/", include_in_schema=False)
 async def redirect_docs():
-    return RedirectResponse("https://api.lemes.my.id/docs")
+    return RedirectResponse("/docs")
 
 app.include_router(admin_router)
 app.include_router(both_router)
