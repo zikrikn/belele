@@ -151,8 +151,8 @@ async def pedoman():
         detail="Laman Berita Kosong"
         )
     
-    isiberita = req_pedoman.items
-    return isiberita
+    isipedoman = req_pedoman.items
+    return isipedoman
 
 #profile admin - user
 @both_router.get("/profile/{id_user}")
