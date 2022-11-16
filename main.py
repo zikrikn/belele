@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, APIRouter
 from fastapi.middleware.cors import CORSMiddleware # Untuk CORS Middleware beda tempat. Pakai Fetch & JS untuk implementasinya OR using NEXT.js
 from fastapi.responses import RedirectResponse
+from pydantic import ValidationError
 
 #Schemas
 from schemas.pemberipakan import *
@@ -12,7 +13,6 @@ from schemas.beritadanpedoman import *
 
 #Connecting to database
 from db import *
-from pydantic import ValidationError
 
 #Unicorn
 import uvicorn
@@ -181,27 +181,25 @@ admin_router = APIRouter(tags=["Admin"])
 @admin_router.post("/post/berita")
 async def post_berita(berita: BeritaDanPedomanDB):
     berita = {
-        "key": berita.key,
         "tipe": berita.tipe,
         "judulBeritaDanPedoman": berita.judulBeritaDanPedoman,
         "tanggalBeritaDanPedoman": berita.tanggalBeritaDanPedoman,
         "isiBeritaDanPedoman": berita.isiBeritaDanPedoman,
         "fileBeritaDanPedoman": berita.fileBeritaDanPedoman
     }
-    return berita
+    return db_beritadanpedoman.put(berita)
 
 #admin - pedoman
 @admin_router.post("/post/pedoman")
 async def post_Pedoman(pedoman: BeritaDanPedomanDB):
     pedoman = {
-        "key": pedoman.key,
         "tipe": pedoman.tipe,
         "judulBeritaDanPedoman": pedoman.judulBeritaDanPedoman,
         "tanggalBeritaDanPedoman": pedoman.tanggalBeritaDanPedoman,
         "isiBeritaDanPedoman": pedoman.isiBeritaDanPedoman,
         "fileBeritaDanPedoman": pedoman.fileBeritaDanPedoman
     }
-    return pedoman
+    return db_beritadanpedoman.put(pedoman)
 
 #admin - delete berita
 @admin_router.delete("/delete/beritadanpedoman")

@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 
 class BeritaDanPedomanDB(BaseModel):
-    key: str #AdminID
     tipe: str #Tipe-nya Berita atau Pedoman
     judulBeritaDanPedoman: str
     tanggalBeritaDanPedoman: str
