@@ -13,14 +13,14 @@ user_router = APIRouter(tags=["User"])
 #takaranlele
 @user_router.post("/inputkolamlele", summary="Mengukur Tarakan Lele", response_model=KolamIn)
 async def takaran_leleIn(newKolam: KolamDB):
-    req_kolam = db_kolam.fetch({'key': newKolam.key})
+    req_kolam = db_kolam.fetch({'NamaKolam': newKolam.NamaKolam})
     if len(req_kolam.items) != 0:
         raise HTTPException(
             status_code=400,
             detail="Data already exist"
         )
 
-    kolam = {"key": newKolam.key, 
+    kolam = {"NamaKolam": newKolam.NamaKolam, 
         "JumlahLele": newKolam.JumlahLele,
         "BeratLele": newKolam.BeratLele,
         "TanggalAwalTebarBibit": newKolam.TanggalAwalTebarBibit,
@@ -43,8 +43,9 @@ async def takaran_leleIn(newKolam: KolamDB):
 
 #Sepertinya langsung post di POST aja
 @user_router.post("/restock", summary="Merestock pakan lele", response_model=RestockOut)
-async def menghitung_restock(newRestock: RestockIn):
-    req_restock = db_kolam.fetch({"key": newRestock.key})
+def menghitung_restock(newRestock: RestockIn):
+    req_restock = db_kolam.fetch({'NamaKolam': newRestock.NamaKolam})
+    print(newRestock.NamaKolam)
     if len(req_restock.items) == 0:
         raise HTTPException(
             status_code=400,
