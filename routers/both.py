@@ -19,7 +19,7 @@ async def pedoman(pedoman: BeritaDanPedomanDB):
     return req_pedoman.items
 
 #profile admin - user
-@user_router.get("/profile/{id_user}")
+@both_router.get("/profile/{id_user}")
 async def profile(id_user: str):
     user = db_pemberipakan.fetch({'key': user_id})
     admin = db_admin.fetch({'key', user_id})

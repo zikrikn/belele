@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Path, Query
 from schemas.pemberipakan import *
 from schemas.kolam import *
 from schemas.notifikasi import *
@@ -83,4 +83,11 @@ async def notifikasi(id_user: str):
 #search
 @user_router.get("/search/{something}")
 async def search(something: str):
-    return {"Search" : something}
+    req_search = db_kolam.fetch({'key': something}) #use fixed query
+    if len(req_search.items) == 0:
+            raise HTTPException(
+            status_code=400,
+            detail="Data not exist"
+        )
+
+    return req_search.items
