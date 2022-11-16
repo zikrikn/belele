@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Path, Query
+'''from fastapi import APIRouter, HTTPException, Path, Query
 from schemas.pemberipakan import *
 from schemas.kolam import *
 from schemas.notifikasi import *
@@ -64,7 +64,7 @@ def menghitung_restock(newRestock: RestockIn):
     assign_restock['RestockPakan'] = hasilrestockpakan\
     
     try:
-        validated_new_profile = KolamDB(**kolam)
+        validated_new_profile = KolamDB(**assign_restock)
         db_kolam.update(update, assign_restock['key'])
         #db_kolam.put(kolam)
     except ValidationError:
@@ -92,3 +92,4 @@ async def search(something: str):
         )
 
     return req_search.items
+'''

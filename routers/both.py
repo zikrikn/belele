@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+'''from fastapi import APIRouter
 from schemas.beritadanpedoman import *
 from schemas.pemberipakan import *
 from schemas.admin import *
@@ -35,3 +35,4 @@ async def profile(id_user: str):
 @both_router.post("/logout")
 async def logout():
     return "Logout"
+'''

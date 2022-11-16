@@ -1,14 +1,28 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, APIRouter
 from fastapi.middleware.cors import CORSMiddleware # Untuk CORS Middleware beda tempat. Pakai Fetch & JS untuk implementasinya OR using NEXT.js
 from fastapi.responses import RedirectResponse
+
+#Schemas
+from schemas.pemberipakan import *
+from schemas.kolam import *
+from schemas.notifikasi import *
+from schemas.pangan import *
+from schemas.admin import *
+from schemas.beritadanpedoman import *
+
+#Connecting to database
+from db import *
+from pydantic import ValidationError
 
 #Unicorn
 import uvicorn
 
+'''
 #Routers
 from routers.admin import admin_router
 from routers.both import both_router
 from routers.user import user_router
+'''
 
 #Auth
 from auth_subpackage.auth_router import *
@@ -22,16 +36,185 @@ app = FastAPI(
     prefix="/api"
 )
 
-'''
 @app.get("/", include_in_schema=False)
 async def redirect_docs():
+    print("Hello Wolrd")
     return RedirectResponse("/docs")
-'''
 
+''''''''''''
+#!! USER !!
+''''''''''''
+
+user_router = APIRouter(tags=["User"])
+
+#takaranlele
+@user_router.post("/inputkolamlele", summary="Mengukur Tarakan Lele", response_model=KolamIn)
+async def takaran_leleIn(newKolam: KolamDB):
+    req_kolam = db_kolam.fetch({'NamaKolam': newKolam.NamaKolam})
+    if len(req_kolam.items) != 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Data already exist"
+        )
+
+    kolam = {"NamaKolam": newKolam.NamaKolam, 
+        "JumlahLele": newKolam.JumlahLele,
+        "BeratLele": newKolam.BeratLele,
+        "TanggalAwalTebarBibit": newKolam.TanggalAwalTebarBibit,
+        "TakaranPangan": newKolam.TakaranPangan,
+        "JumlahPakan": newKolam.JumlahPakan,
+        "RestockPakan": newKolam.RestockPangan
+    }
+
+    hasiljumlah = newKolam.BeratLele * (3/100)
+    print(hasiljumlah)
+    kolam['TakaranPangan'] = hasiljumlah
+
+    try:
+        validated_new_profile = KolamDB(**kolam)
+        db_kolam.put(validated_new_profile.dict())
+    except ValidationError:
+        raise HTTPException(
+            status_code=404,
+            detail="Invalid input value"
+        )
+    return kolam
+
+@user_router.post("/restock", summary="Merestock pakan lele", response_model=RestockOut)
+def menghitung_restock(newRestock: RestockIn):
+    req_restock = db_kolam.fetch({'NamaKolam': newRestock.NamaKolam})
+    if len(req_restock.items) == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Data not exist"
+        )
+
+    assign_restock = req_restock.items[0]
+    totalrestock = newRestock.JumlahPakan / assign_restock['BeratLele'] * (3/100)
+    print(totalrestock)
+    
+    update = {
+        "JumlahPakan": newRestock.JumlahPakan,
+        "RestockPangan": totalrestock
+    }
+
+    assign_restock['JumlahPakan'] = newRestock.JumlahPakan
+    assign_restock['RestockPangan'] = totalrestock
+    
+    db_kolam.update(update, assign_restock['key'])
+
+    return assign_restock
+
+#notifikasi //buat trigger atau gak refresh setiap berapa menit sekali //atau tentukan waktu untuk trigger
+@user_router.get("/notifikasi/{id_user}")
+async def notifikasi(id_user: str):
+    return {"Notifikasi": id_user}
+
+#search
+@user_router.get("/search/{something}")
+async def search(something: str):
+    req_search = db_kolam.fetch({'NamaKolam': something}) #use fixed query
+    if len(req_search.items) == 0:
+            raise HTTPException(
+            status_code=400,
+            detail="Data not exist"
+        )
+
+    return req_search.items
+
+''''''''''''
+#!! BOTH !!
+''''''''''''
+
+both_router = APIRouter(tags=["Both"])
+
+#Berita
+@both_router.get("/berita")
+async def berita():
+    req_berita = db_beritadanpedoman.fetch({"tipe": "berita"})
+    if len(req_berita.items) == 0:
+        raise HTTPException(
+        status_code=400,
+        detail="Laman Berita Kosong"
+        )
+    
+    isiberita = req_berita.items
+    return isiberita
+
+#Pedoman
+@both_router.get("/pedoman")
+async def pedoman():
+    req_pedoman = db_beritadanpedoman.fetch({"tipe": "pedoman"})
+    if len(req_pedoman.items) == 0:
+        raise HTTPException(
+        status_code=400,
+        detail="Laman Berita Kosong"
+        )
+    
+    isiberita = req_pedoman.items
+    return isiberita
+
+#profile admin - user
+@both_router.get("/profile/{id_user}")
+async def profile(id_user: str):
+    user = db_pemberipakan.fetch({'key': id_user})
+    admin = db_admin.fetch({'key', id_user})
+
+    if len(user.items) != 0:
+        return user.items[0]
+
+    if len(admin.items) != 0:
+        return admin.items[0]
+    
+
+#Logout
+@both_router.post("/logout")
+async def logout():
+    return "Logout"
+
+''''''''''''
+#!! ADMIN !!
+''''''''''''
+admin_router = APIRouter(tags=["Admin"])
+
+#admin - berita
+@admin_router.post("/post/berita")
+async def post_berita(berita: BeritaDanPedomanDB):
+    berita = {
+        "key": berita.key,
+        "tipe": berita.tipe,
+        "judulBeritaDanPedoman": berita.judulBeritaDanPedoman,
+        "tanggalBeritaDanPedoman": berita.tanggalBeritaDanPedoman,
+        "isiBeritaDanPedoman": berita.isiBeritaDanPedoman,
+        "fileBeritaDanPedoman": berita.fileBeritaDanPedoman
+    }
+    return berita
+
+#admin - pedoman
+@admin_router.post("/post/pedoman")
+async def post_Pedoman(pedoman: BeritaDanPedomanDB):
+    pedoman = {
+        "key": pedoman.key,
+        "tipe": pedoman.tipe,
+        "judulBeritaDanPedoman": pedoman.judulBeritaDanPedoman,
+        "tanggalBeritaDanPedoman": pedoman.tanggalBeritaDanPedoman,
+        "isiBeritaDanPedoman": pedoman.isiBeritaDanPedoman,
+        "fileBeritaDanPedoman": pedoman.fileBeritaDanPedoman
+    }
+    return pedoman
+
+#admin - delete berita
+@admin_router.delete("/delete/beritadanpedoman")
+async def delete_berita(berita: BeritaDanPedomanDB):
+    req_berita = db_beritadanpedoman.fetch({"tipe": berita.judulBeritaDanPedoman})
+    db_beritadanpedoman.delete(req_berita.items['0']['key'])
+    return {'message': 'success'}
+
+
+app.include_router(auth_router)
+app.include_router(user_router)
 app.include_router(admin_router)
 app.include_router(both_router)
-app.include_router(user_router)
-app.include_router(auth_router)
 
 app.add_middleware(
     CORSMiddleware,

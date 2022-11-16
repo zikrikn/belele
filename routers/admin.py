@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+'''from fastapi import APIRouter
 from schemas.beritadanpedoman import *
 from db import *
 
@@ -36,3 +36,4 @@ async def delete_berita(berita: BeritaDanPedomanDB):
     req_berita = db_beritadanpedoman.fetch({"tipe": berita.judulBeritaDanPedoman})
     db_beritadanpedoman.delete(req_berita.items['0']['key'])
     return {'message': 'success'}
+'''

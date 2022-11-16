@@ -6,15 +6,16 @@ class KolamDB(BaseModel):
     JumlahLele: int
     BeratLele: int
     TanggalAwalTebarBibit: str
-    TakaranPangan: int
-    JumlahPakan: Union[int, None] = None
-    RestockPangan: Union[int, None] = None
+    TakaranPangan: Union[float, None] = None
+    JumlahPakan: Union[float, None] = None
+    RestockPangan: Union[float, None] = None
 
 class KolamIn(BaseModel):
     NamaKolam: str #Kolam.idr
     JumlahLele: int
     BeratLele: int
     TanggalAwalTebarBibit: str
+    TakaranPangan: Union[float, None] = None
 
 class RestockIn(BaseModel): #This Out
     NamaKolam: str #Kolam.id
@@ -24,5 +25,5 @@ class RestockIn(BaseModel): #This Out
 class RestockOut(BaseModel): #This Out
     NamaKolam: str #Kolam.id
     BeratLele: int
-    JumlahPakan: int
-    RestockPangan: int
+    JumlahPakan: Union[float, None] = None
+    RestockPangan: Union[float, None] = None
