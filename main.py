@@ -51,8 +51,8 @@ user_router = APIRouter(tags=["User"])
 
 #takaranlele
 @user_router.post("/inputkolamlele", summary="Mengukur Tarakan Lele", response_model=KolamIn)
-async def takaran_leleIn(newKolam: KolamDB):
-    req_kolam = db_kolam.fetch({'NamaKolam': newKolam.NamaKolam})
+async def takaran_leleIn(newKolam: KolamIn):
+    req_kolam = db_kolam.fetch({'NamaKolam': (newKolam.NamaKolam).lower()})
     if len(req_kolam.items) != 0:
         raise HTTPException(
             status_code=400,
@@ -61,13 +61,13 @@ async def takaran_leleIn(newKolam: KolamDB):
 
     kolam = {
         "key": str(int(generateKey(time.time() * 10000))),
-        "NamaKolam": newKolam.NamaKolam, 
+        "NamaKolam": (newKolam.NamaKolam).lower(), 
         "JumlahLele": newKolam.JumlahLele,
         "BeratLele": newKolam.BeratLele,
         "TanggalAwalTebarBibit": newKolam.TanggalAwalTebarBibit,
         "TakaranPangan": newKolam.TakaranPangan,
-        "JumlahPakan": newKolam.JumlahPakan,
-        "RestockPakan": newKolam.RestockPangan
+        "JumlahPakan": 0,
+        "RestockPakan": 0
     }
 
     hasiljumlah = newKolam.BeratLele * (3/100)
@@ -86,7 +86,7 @@ async def takaran_leleIn(newKolam: KolamDB):
 
 @user_router.post("/restock", summary="Merestock pakan lele", response_model=RestockOut)
 def menghitung_restock(newRestock: RestockIn):
-    req_restock = db_kolam.fetch({'NamaKolam': newRestock.NamaKolam})
+    req_restock = db_kolam.fetch({'NamaKolam': (newRestock.NamaKolam).lower()})
     if len(req_restock.items) == 0:
         raise HTTPException(
             status_code=400,
@@ -127,14 +127,15 @@ async def info_kolam():
 @user_router.delete("/delete/{keykolam}", summary="Menghapus Kolam")
 async def delete_kolam(keykolam: str):
     req_kolam = db_kolam.get(keykolam)
-    db_kolam.delete(req_kolam[0]['key'])
+    namakolam = req_kolam['NamaKolam']
+    db_kolam.delete(req_kolam['key'])
 
-    return {'message': 'success'}
+    return {'message': 'success', 'namakolam': namakolam}
 
 #search
 @user_router.get("/search/{something}")
 async def search(something: str):
-    req_search = db_kolam.fetch({'NamaKolam': something}) #use fixed query
+    req_search = db_kolam.fetch({'NamaKolam': (something).lower()}) #use fixed query
     if len(req_search.items) == 0:
             raise HTTPException(
             status_code=400,
