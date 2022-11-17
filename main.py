@@ -114,15 +114,17 @@ def menghitung_restock(newRestock: RestockIn):
 
 #get info kolam
 @user_router.get("/infokolam")
-async def info_kolam(namaKolam: str):
-    req_kolam = db_kolam.fetch({"NamaKolam": namaKolam})
-    if len(req_kolam.items) == 0:
+async def info_kolam():
+    res_kolam = db_kolam.fetch()
+    all_items = res_kolam.items
+    
+    if len(all_items) == 0:
             raise HTTPException(
             status_code=400,
             detail="Tidak ada data kolam"
         )
     
-    return req_kolam.items
+    return all_items
 
 #search
 @user_router.get("/search/{something}")
