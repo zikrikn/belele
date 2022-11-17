@@ -124,7 +124,7 @@ async def info_kolam():
     return all_items
 
 #delete kolam
-@user_router.get("/delete/{namakolam}", summary="Menghapus Kolam")
+@user_router.delete("/delete/{namakolam}", summary="Menghapus Kolam")
 async def delete_kolam(keykolam: str):
     req_kolam = db_kolam.get(keykolam)
     db_kolam.delete(req_kolam[0]['key'])
