@@ -7,3 +7,9 @@ class BeritaDanPedomanDB(BaseModel):
     tanggalBeritaDanPedoman: str
     isiBeritaDanPedoman: str
     fileBeritaDanPedoman: str
+
+class BeritaDanPedomanIn(BaseModel):
+    judulBeritaDanPedoman: str
+    tanggalBeritaDanPedoman: str
+    isiBeritaDanPedoman: str
+    fileBeritaDanPedoman: str

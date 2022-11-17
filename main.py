@@ -186,8 +186,8 @@ def generateKey(timestap):
     return (bigNumber - timestap)
 
 #admin - berita
-@admin_router.post("/post/berita")
-async def post_berita(berita: BeritaDanPedomanDB):
+@admin_router.post("/post/berita", response_model=BeritaDanPedomanDB)
+async def post_berita(berita: BeritaDanPedomanIn):
 
     berita = {
         "key": str(int(generateKey(time.time() * 10000))),
@@ -200,8 +200,8 @@ async def post_berita(berita: BeritaDanPedomanDB):
     return db_beritadanpedoman.put(berita)
 
 #admin - pedoman
-@admin_router.post("/post/pedoman")
-async def post_Pedoman(pedoman: BeritaDanPedomanDB):
+@admin_router.post("/post/pedoman", response_model=BeritaDanPedomanDB)
+async def post_Pedoman(pedoman: BeritaDanPedomanIn):
 
     pedoman = {
         "key": str(int(generateKey(time.time() * 10000))),
