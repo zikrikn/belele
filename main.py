@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, APIRouter, Request, Response
 from fastapi.middleware.cors import CORSMiddleware # Untuk CORS Middleware beda tempat. Pakai Fetch & JS untuk implementasinya OR using NEXT.js
 from fastapi.responses import RedirectResponse
 from pydantic import ValidationError
+import time
 
 #Schemas
 from schemas.pemberipakan import *
@@ -178,11 +179,18 @@ async def logout():
 ''''''''''''
 admin_router = APIRouter(tags=["Admin"])
 
+#fungsi untuk generate key agar lastest record muncul paling atas
+
+def generateKey(timestap):
+    bigNumber = 8.64e15
+    return (bigNumber - timestap)
+
 #admin - berita
 @admin_router.post("/post/berita")
 async def post_berita(berita: BeritaDanPedomanDB):
 
     berita = {
+        "key": str(int(generateKey(time.time() * 10000))),
         "tipe": "berita",
         "judulBeritaDanPedoman": berita.judulBeritaDanPedoman,
         "tanggalBeritaDanPedoman": berita.tanggalBeritaDanPedoman,
@@ -196,6 +204,7 @@ async def post_berita(berita: BeritaDanPedomanDB):
 async def post_Pedoman(pedoman: BeritaDanPedomanDB):
 
     pedoman = {
+        "key": str(int(generateKey(time.time() * 10000))),
         "tipe": "pedoman",
         "judulBeritaDanPedoman": pedoman.judulBeritaDanPedoman,
         "tanggalBeritaDanPedoman": pedoman.tanggalBeritaDanPedoman,
