@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, APIRouter
+from fastapi import FastAPI, HTTPException, APIRouter, Request, Response
 from fastapi.middleware.cors import CORSMiddleware # Untuk CORS Middleware beda tempat. Pakai Fetch & JS untuk implementasinya OR using NEXT.js
 from fastapi.responses import RedirectResponse
 from pydantic import ValidationError
@@ -105,11 +105,6 @@ def menghitung_restock(newRestock: RestockIn):
 
     return assign_restock
 
-#notifikasi //buat trigger atau gak refresh setiap berapa menit sekali //atau tentukan waktu untuk trigger
-@user_router.get("/notifikasi/{id_user}")
-async def notifikasi(id_user: str):
-    return {"Notifikasi": id_user}
-
 #search
 @user_router.get("/search/{something}")
 async def search(something: str):
@@ -121,6 +116,11 @@ async def search(something: str):
         )
 
     return req_search.items
+
+#notifikasi //buat trigger atau gak refresh setiap berapa menit sekali //atau tentukan waktu untuk trigger //menggunakan deta webhook sebagai alternative
+@user_router.get("/notifikasi/{id_user}")
+async def notifikasi(id_user: str):
+    return {"Notifikasi": id_user}
 
 ''''''''''''
 #!! BOTH !!
@@ -139,6 +139,7 @@ async def berita():
         )
     
     isiberita = req_berita.items
+    # PR buat sorting untuk menampilkan isi JSON yang paling recent
     return isiberita
 
 #Pedoman
@@ -180,8 +181,9 @@ admin_router = APIRouter(tags=["Admin"])
 #admin - berita
 @admin_router.post("/post/berita")
 async def post_berita(berita: BeritaDanPedomanDB):
+
     berita = {
-        "tipe": berita.tipe,
+        "tipe": "berita",
         "judulBeritaDanPedoman": berita.judulBeritaDanPedoman,
         "tanggalBeritaDanPedoman": berita.tanggalBeritaDanPedoman,
         "isiBeritaDanPedoman": berita.isiBeritaDanPedoman,
@@ -192,8 +194,9 @@ async def post_berita(berita: BeritaDanPedomanDB):
 #admin - pedoman
 @admin_router.post("/post/pedoman")
 async def post_Pedoman(pedoman: BeritaDanPedomanDB):
+
     pedoman = {
-        "tipe": pedoman.tipe,
+        "tipe": "pedoman",
         "judulBeritaDanPedoman": pedoman.judulBeritaDanPedoman,
         "tanggalBeritaDanPedoman": pedoman.tanggalBeritaDanPedoman,
         "isiBeritaDanPedoman": pedoman.isiBeritaDanPedoman,
@@ -202,10 +205,18 @@ async def post_Pedoman(pedoman: BeritaDanPedomanDB):
     return db_beritadanpedoman.put(pedoman)
 
 #admin - delete berita
-@admin_router.delete("/delete/beritadanpedoman")
-async def delete_berita(berita: BeritaDanPedomanDB):
-    req_berita = db_beritadanpedoman.fetch({"tipe": berita.judulBeritaDanPedoman})
-    db_beritadanpedoman.delete(req_berita.items['0']['key'])
+@admin_router.delete("/delete/berita")
+async def delete_berita():
+    req_berita = db_beritadanpedoman.fetch({"tipe": "berita"})
+    print(req_berita)
+    db_beritadanpedoman.delete(req_berita.items[0]['key'])
+    return {'message': 'success'}
+
+#admin - delete pedoman
+@admin_router.delete("/delete/pedoman")
+async def delete_pedoman():
+    req_pedoman = db_beritadanpedoman.fetch({"tipe": "pedoman"})
+    db_beritadanpedoman.delete(req_pedoman.items[0]['key'])
     return {'message': 'success'}
 
 
