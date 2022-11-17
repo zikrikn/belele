@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, APIRouter, Request, Response
+from fastapi import FastAPI, HTTPException, APIRouter
 from fastapi.middleware.cors import CORSMiddleware # Untuk CORS Middleware beda tempat. Pakai Fetch & JS untuk implementasinya OR using NEXT.js
 from fastapi.responses import RedirectResponse
 from pydantic import ValidationError
@@ -39,7 +39,6 @@ app = FastAPI(
 
 @app.get("/", include_in_schema=False)
 async def redirect_docs():
-    print("Hello Wolrd")
     return RedirectResponse("/docs")
 
 ''''''''''''
@@ -105,6 +104,18 @@ def menghitung_restock(newRestock: RestockIn):
     db_kolam.update(update, assign_restock['key'])
 
     return assign_restock
+
+#get info kolam
+@user_router.get("/infokolam")
+async def info_kolam(info: KolamDB):
+    req_kolam = db_kolam.fetch({"NamaKolam": info.NamaKolam})
+    if len(req_kolam.items) == 0:
+            raise HTTPException(
+            status_code=400,
+            detail="Tidak ada data kolam"
+        )
+    
+    return req_kolam.items
 
 #search
 @user_router.get("/search/{something}")
@@ -180,7 +191,6 @@ async def logout():
 admin_router = APIRouter(tags=["Admin"])
 
 #fungsi untuk generate key agar lastest record muncul paling atas
-
 def generateKey(timestap):
     bigNumber = 8.64e15
     return (bigNumber - timestap)
@@ -213,15 +223,15 @@ async def post_Pedoman(pedoman: BeritaDanPedomanIn):
     }
     return db_beritadanpedoman.put(pedoman)
 
-#admin - delete berita
+#admin - delete berita //nanti pakai key-nya untuk menghapus
 @admin_router.delete("/delete/berita")
 async def delete_berita():
     req_berita = db_beritadanpedoman.fetch({"tipe": "berita"})
-    print(req_berita)
     db_beritadanpedoman.delete(req_berita.items[0]['key'])
     return {'message': 'success'}
 
-#admin - delete pedoman
+# admin - delete pedoman - the lastest 
+# maybe we can changes this into by "key"
 @admin_router.delete("/delete/pedoman")
 async def delete_pedoman():
     req_pedoman = db_beritadanpedoman.fetch({"tipe": "pedoman"})
