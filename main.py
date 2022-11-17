@@ -37,6 +37,11 @@ app = FastAPI(
     prefix="/api"
 )
 
+#fungsi untuk generate key agar lastest record muncul paling atas
+def generateKey(timestap):
+    bigNumber = 8.64e15
+    return (bigNumber - timestap)
+
 @app.get("/", include_in_schema=False)
 async def redirect_docs():
     return RedirectResponse("/docs")
@@ -57,7 +62,9 @@ async def takaran_leleIn(newKolam: KolamDB):
             detail="Data already exist"
         )
 
-    kolam = {"NamaKolam": newKolam.NamaKolam, 
+    kolam = {
+        "key": str(int(generateKey(time.time() * 10000))),
+        "NamaKolam": newKolam.NamaKolam, 
         "JumlahLele": newKolam.JumlahLele,
         "BeratLele": newKolam.BeratLele,
         "TanggalAwalTebarBibit": newKolam.TanggalAwalTebarBibit,
@@ -107,8 +114,8 @@ def menghitung_restock(newRestock: RestockIn):
 
 #get info kolam
 @user_router.get("/infokolam")
-async def info_kolam(info: KolamDB):
-    req_kolam = db_kolam.fetch({"NamaKolam": info.NamaKolam})
+async def info_kolam(namaKolam: str):
+    req_kolam = db_kolam.fetch({"NamaKolam": namaKolam})
     if len(req_kolam.items) == 0:
             raise HTTPException(
             status_code=400,
@@ -189,11 +196,6 @@ async def logout():
 #!! ADMIN !!
 ''''''''''''
 admin_router = APIRouter(tags=["Admin"])
-
-#fungsi untuk generate key agar lastest record muncul paling atas
-def generateKey(timestap):
-    bigNumber = 8.64e15
-    return (bigNumber - timestap)
 
 #admin - berita
 @admin_router.post("/post/berita", response_model=BeritaDanPedomanDB)

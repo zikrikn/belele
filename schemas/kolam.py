@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import Union
 
 class KolamDB(BaseModel):
+    key: str
     NamaKolam: str #Kolam.idr
     JumlahLele: int
     BeratLele: int
