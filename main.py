@@ -4,7 +4,7 @@ from fastapi.responses import RedirectResponse
 from pydantic import ValidationError
 import time
 
-#Schemas
+# Schemas
 from schemas.pemberipakan import *
 from schemas.kolam import *
 from schemas.notifikasi import *
@@ -12,11 +12,14 @@ from schemas.pangan import *
 from schemas.admin import *
 from schemas.beritadanpedoman import *
 
-#Connecting to database
+# Connecting to database
 from db import *
 
-#Unicorn
+# Unicorn
 import uvicorn
+
+# Auth
+from auth_subpackage.auth_router import *
 
 '''
 #Routers
@@ -24,12 +27,6 @@ from routers.admin import admin_router
 from routers.both import both_router
 from routers.user import user_router
 '''
-
-#Auth
-from auth_subpackage.auth_router import *
-
-#Database
-from db import *
 
 app = FastAPI(
     title="LeMES",
@@ -113,11 +110,11 @@ def menghitung_restock(newRestock: RestockIn):
     return assign_restock
 
 #get info kolam
-@user_router.get("/infokolam")
+@user_router.get("/infokolam", summary="Melihat Info Kolam")
 async def info_kolam():
     res_kolam = db_kolam.fetch()
     all_items = res_kolam.items
-    
+
     if len(all_items) == 0:
             raise HTTPException(
             status_code=400,
@@ -125,6 +122,14 @@ async def info_kolam():
         )
     
     return all_items
+
+#delete kolam
+@user_router.get("/delete/{namakolam}", summary="Menghapus Kolam")
+async def delete_kolam(keykolam: str):
+    req_kolam = db_kolam.get(keykolam)
+    db_kolam.delete(req_kolam[0]['key'])
+
+    return {'message': 'success'}
 
 #search
 @user_router.get("/search/{something}")
@@ -242,6 +247,12 @@ async def delete_pedoman():
     db_beritadanpedoman.delete(req_pedoman.items[0]['key'])
     return {'message': 'success'}
 
+# untuk menghapus pedoman dengan klik lewat trigger kunci-nya yang bakal dilihat kunci-nya dari artikel yang sedang dilihat
+@admin_router.delete("/delete/pedoman-byclick")
+async def delete_pedomanklik(kunci: BeritaDanPedomanDB):
+    req_pedoman = db_beritadanpedoman.fetch({"key": kunci})
+    db_beritadanpedoman.delete(req_pedoman.items[0]['key'])
+    return {'message': 'success'}
 
 app.include_router(auth_router)
 app.include_router(user_router)
