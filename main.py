@@ -19,10 +19,8 @@ from db import *
 import uvicorn
 
 # Auth
-from auth_class import Auth
+from auth_class import *
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-
-auth_router = APIRouter(tags=["Auth"])
 
 #Auto handler
 security = HTTPBearer()
@@ -53,6 +51,7 @@ async def redirect_docs():
 ''''''''''''
 #!! AUTH !!
 ''''''''''''
+auth_router = APIRouter(tags=["Auth"])
 
 #Membuat auth untuk login dan signup
 #!!!Tambahannya signup admin dan delete akun!!!
@@ -70,7 +69,7 @@ async def signup(user_details: PemberiPakanDB):
         return error_msg
 
 @auth_router.post('/login')
-async def login(user_details: PemberiPakanDB):
+async def login(user_details: PemberiPakanIn):
     user = db_pemberipakan.get(user_details.key)
     if (user is None):
         return HTTPException(status_code=401, detail='Invalid username')
@@ -106,117 +105,129 @@ user_router = APIRouter(tags=["User"])
 
 #takaranlele
 @user_router.post("/inputkolamlele", summary="Mengukur Tarakan Lele", response_model=KolamIn)
-async def takaran_leleIn(newKolam: KolamIn):
-    req_kolam = db_kolam.fetch({'NamaKolam': (newKolam.NamaKolam).lower()})
-    if len(req_kolam.items) != 0:
-        raise HTTPException(
-            status_code=400,
-            detail="Data already exist"
-        )
+async def takaran_leleIn(newKolam: KolamIn, credentials: HTTPAuthorizationCredentials = Security(security)):
+    token = credentials.credentials
+    if(auth_handler.decode_token(token)):
+        req_kolam = db_kolam.fetch({'NamaKolam': (newKolam.NamaKolam).lower()})
+        if len(req_kolam.items) != 0:
+            raise HTTPException(
+                status_code=400,
+                detail="Data already exist"
+            )
 
-    kolam = {
-        "key": str(int(generateKey(time.time() * 10000))),
-        "NamaKolam": (newKolam.NamaKolam).lower(), 
-        "JumlahLele": newKolam.JumlahLele,
-        "BeratLele": newKolam.BeratLele,
-        "TanggalAwalTebarBibit": newKolam.TanggalAwalTebarBibit,
-        "TakaranPangan": newKolam.TakaranPangan,
-        "JumlahPakan": 0,
-        "RestockPakan": 0
-    }
+        kolam = {
+            "key": str(int(generateKey(time.time() * 10000))),
+            "NamaKolam": (newKolam.NamaKolam).lower(), 
+            "JumlahLele": newKolam.JumlahLele,
+            "BeratLele": newKolam.BeratLele,
+            "TanggalAwalTebarBibit": newKolam.TanggalAwalTebarBibit,
+            "TakaranPangan": newKolam.TakaranPangan,
+            "JumlahPakan": 0,
+            "RestockPakan": 0
+        }
 
-    hasiljumlah = newKolam.BeratLele * (3/100)
-    print(hasiljumlah)
-    kolam['TakaranPangan'] = hasiljumlah
+        hasiljumlah = newKolam.BeratLele * (3/100)
+        print(hasiljumlah)
+        kolam['TakaranPangan'] = hasiljumlah
 
-    Notifikasi = {
-        "key": str(int(generateKey(time.time() * 10000))),
-        "NotifikasiRemindHarianTakaranWaktuPanen": True
-    }
+        Notifikasi = {
+            "key": str(int(generateKey(time.time() * 10000))),
+            "NotifikasiRemindHarianTakaranWaktuPanen": True
+        }
 
-    db_notifikasi.put(Notifikasi)
+        db_notifikasi.put(Notifikasi)
 
-    try:
-        validated_new_profile = KolamDB(**kolam)
-        db_kolam.put(validated_new_profile.dict())
-    except ValidationError:
-        raise HTTPException(
-            status_code=404,
-            detail="Invalid input value"
-        )
-    return kolam
+        try:
+            validated_new_profile = KolamDB(**kolam)
+            db_kolam.put(validated_new_profile.dict())
+        except ValidationError:
+            raise HTTPException(
+                status_code=404,
+                detail="Invalid input value"
+            )
+        return kolam
 
 @user_router.post("/restock", summary="Merestock pakan lele", response_model=RestockOut)
-def menghitung_restock(newRestock: RestockIn):
-    req_restock = db_kolam.fetch({'NamaKolam': (newRestock.NamaKolam).lower()})
-    if len(req_restock.items) == 0:
-        raise HTTPException(
-            status_code=400,
-            detail="Data not exist"
-        )
+def menghitung_restock(newRestock: RestockIn, credentials: HTTPAuthorizationCredentials = Security(security)):
+    token = credentials.credentials
+    if(auth_handler.decode_token(token)):
+        req_restock = db_kolam.fetch({'NamaKolam': (newRestock.NamaKolam).lower()})
+        if len(req_restock.items) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="Data not exist"
+            )
 
-    assign_restock = req_restock.items[0]
-    totalrestock = newRestock.JumlahPakan / assign_restock['BeratLele'] * (3/100)
-    print(totalrestock)
-    
-    update = {
-        "JumlahPakan": newRestock.JumlahPakan,
-        "RestockPangan": totalrestock
-    }
+        assign_restock = req_restock.items[0]
+        totalrestock = newRestock.JumlahPakan / assign_restock['BeratLele'] * (3/100)
+        print(totalrestock)
+        
+        update = {
+            "JumlahPakan": newRestock.JumlahPakan,
+            "RestockPangan": totalrestock
+        }
 
-    assign_restock['JumlahPakan'] = newRestock.JumlahPakan
-    assign_restock['RestockPangan'] = totalrestock
-    
-    db_kolam.update(update, assign_restock['key'])
+        assign_restock['JumlahPakan'] = newRestock.JumlahPakan
+        assign_restock['RestockPangan'] = totalrestock
+        
+        db_kolam.update(update, assign_restock['key'])
 
-    Notifikasi = {
-        "key": str(int(generateKey(time.time() * 10000))),
-        "NotifikasiRestockPakan": True
-    }
+        Notifikasi = {
+            "key": str(int(generateKey(time.time() * 10000))),
+            "NotifikasiRestockPakan": True
+        }
 
-    db_notifikasi.put(Notifikasi)
+        db_notifikasi.put(Notifikasi)
 
-    return assign_restock
+        return assign_restock
 
 #get info kolam
 @user_router.get("/infokolam", summary="Melihat Info Kolam")
-async def info_kolam():
-    res_kolam = db_kolam.fetch()
-    all_items = res_kolam.items
+async def info_kolam(credentials: HTTPAuthorizationCredentials = Security(security)):
+    token = credentials.credentials
+    if(auth_handler.decode_token(token)):
+        res_kolam = db_kolam.fetch()
+        all_items = res_kolam.items
 
-    if len(all_items) == 0:
-            raise HTTPException(
-            status_code=400,
-            detail="Tidak ada data kolam"
-        )
-    
-    return all_items
+        if len(all_items) == 0:
+                raise HTTPException(
+                status_code=400,
+                detail="Tidak ada data kolam"
+            )
+        
+        return all_items
 
 #delete kolam
 @user_router.delete("/delete/{keykolam}", summary="Menghapus Kolam")
-async def delete_kolam(keykolam: str):
-    req_kolam = db_kolam.get(keykolam)
-    namakolam = req_kolam['NamaKolam']
-    db_kolam.delete(req_kolam['key'])
+async def delete_kolam(keykolam: str, credentials: HTTPAuthorizationCredentials = Security(security)):
+    token = credentials.credentials
+    if(auth_handler.decode_token(token)):
+        req_kolam = db_kolam.get(keykolam)
+        namakolam = req_kolam['NamaKolam']
+        db_kolam.delete(req_kolam['key'])
 
-    return {'message': 'success', 'namakolam': namakolam}
+        return {'message': 'success', 'namakolam': namakolam}
 
 #search
 @user_router.get("/search/{something}")
-async def search(something: str):
-    req_search = db_kolam.fetch({'NamaKolam': (something).lower()}) #use fixed query
-    if len(req_search.items) == 0:
-            raise HTTPException(
-            status_code=400,
-            detail="Data not exist"
-        )
+async def search(something: str, credentials: HTTPAuthorizationCredentials = Security(security)):
+    token = credentials.credentials
+    if(auth_handler.decode_token(token)):
+        req_search = db_kolam.fetch({'NamaKolam': (something).lower()}) #use fixed query
+        if len(req_search.items) == 0:
+                raise HTTPException(
+                status_code=400,
+                detail="Data not exist"
+            )
 
-    return req_search.items
+        return req_search.items
 
 #notifikasi //buat trigger atau gak refresh setiap berapa menit sekali //atau tentukan waktu untuk trigger //menggunakan deta webhook sebagai alternative
 @user_router.get("/notifikasi/{id_user}")
-async def notifikasi(id_user: str):
-    return {"Notifikasi": id_user}
+async def notifikasi(id_user: str, credentials: HTTPAuthorizationCredentials = Security(security)):
+    token = credentials.credentials
+    if(auth_handler.decode_token(token)):
+        return {"Notifikasi": id_user}
 
 ''''''''''''
 #!! ADMIN !!
@@ -308,21 +319,25 @@ async def pedoman():
 
 #profile admin - user
 @both_router.get("/profile/{id_user}")
-async def profile(id_user: str):
-    user = db_pemberipakan.fetch({'key': id_user})
-    admin = db_admin.fetch({'key', id_user})
+async def profile(id_user: str, credentials: HTTPAuthorizationCredentials = Security(security)):
+    token = credentials.credentials
+    if(auth_handler.decode_token(token)):
+        user = db_pemberipakan.fetch({'key': id_user})
+        admin = db_admin.fetch({'key', id_user})
 
-    if len(user.items) != 0:
-        return user.items[0]
+        if len(user.items) != 0:
+            return user.items[0]
 
-    if len(admin.items) != 0:
-        return admin.items[0]
+        if len(admin.items) != 0:
+            return admin.items[0]
     
 
 #Logout
 @both_router.post("/logout")
-async def logout():
-    return "Logout"
+async def logout(credentials: HTTPAuthorizationCredentials = Security(security)):
+    token = credentials.credentials
+    if(auth_handler.decode_token(token)):
+        return {'message': 'logout success'}
 
 app.include_router(auth_router)
 app.include_router(user_router)
