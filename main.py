@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, APIRouter
+from fastapi import FastAPI, HTTPException, APIRouter, Security
 from fastapi.middleware.cors import CORSMiddleware # Untuk CORS Middleware beda tempat. Pakai Fetch & JS untuk implementasinya OR using NEXT.js
 from fastapi.responses import RedirectResponse
 from pydantic import ValidationError
@@ -19,7 +19,14 @@ from db import *
 import uvicorn
 
 # Auth
-from auth_subpackage.auth_router import *
+from auth_class import Auth
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
+auth_router = APIRouter(tags=["Auth"])
+
+#Auto handler
+security = HTTPBearer()
+auth_handler = Auth()
 
 '''
 #Routers
@@ -42,6 +49,54 @@ def generateKey(timestap):
 @app.get("/", include_in_schema=False)
 async def redirect_docs():
     return RedirectResponse("/docs")
+
+''''''''''''
+#!! AUTH !!
+''''''''''''
+
+#Membuat auth untuk login dan signup
+#!!!Tambahannya signup admin dan delete akun!!!
+
+@auth_router.post('/signup')
+async def signup(user_details: PemberiPakanDB):
+    if db_pemberipakan.get(user_details.key) != None:
+        return 'Account already exists'
+    try:
+        hashed_password = auth_handler.encode_password(user_details.PasswordPP)
+        user = {'key': user_details.key, 'password': hashed_password}
+        return db_pemberipakan.put(user)
+    except:
+        error_msg = 'Failed to signup user'
+        return error_msg
+
+@auth_router.post('/login')
+async def login(user_details: PemberiPakanDB):
+    user = db_pemberipakan.get(user_details.key)
+    if (user is None):
+        return HTTPException(status_code=401, detail='Invalid username')
+    if (not auth_handler.verify_password(user_details.PasswordPP, user['password'])):
+        return HTTPException(status_code=401, detail='Invalid password')
+    
+    access_token = auth_handler.encode_token(user['key'])
+    refresh_token = auth_handler.encode_refresh_token(user['key'])
+    return {'access_token': access_token, 'refresh_token': refresh_token}
+
+@auth_router.get('/refresh_token')
+async def refresh_token(credentials: HTTPAuthorizationCredentials = Security(security)):
+    refresh_token = credentials.credentials
+    new_token = auth_handler.refresh_token(refresh_token)
+    return {'access_token': new_token}
+
+
+@auth_router.post('/secret')
+def secret_data(credentials: HTTPAuthorizationCredentials = Security(security)):
+    token = credentials.credentials
+    if(auth_handler.decode_token(token)):
+        return 'Top Secret data only authorized users can access this info'
+
+@auth_router.get('/notsecret')
+def not_secret_data():
+    return 'Not secret data'
 
 ''''''''''''
 #!! USER !!
@@ -73,6 +128,13 @@ async def takaran_leleIn(newKolam: KolamIn):
     hasiljumlah = newKolam.BeratLele * (3/100)
     print(hasiljumlah)
     kolam['TakaranPangan'] = hasiljumlah
+
+    Notifikasi = {
+        "key": str(int(generateKey(time.time() * 10000))),
+        "NotifikasiRemindHarianTakaranWaktuPanen": True
+    }
+
+    db_notifikasi.put(Notifikasi)
 
     try:
         validated_new_profile = KolamDB(**kolam)
@@ -106,6 +168,13 @@ def menghitung_restock(newRestock: RestockIn):
     assign_restock['RestockPangan'] = totalrestock
     
     db_kolam.update(update, assign_restock['key'])
+
+    Notifikasi = {
+        "key": str(int(generateKey(time.time() * 10000))),
+        "NotifikasiRestockPakan": True
+    }
+
+    db_notifikasi.put(Notifikasi)
 
     return assign_restock
 
@@ -148,57 +217,6 @@ async def search(something: str):
 @user_router.get("/notifikasi/{id_user}")
 async def notifikasi(id_user: str):
     return {"Notifikasi": id_user}
-
-''''''''''''
-#!! BOTH !!
-''''''''''''
-
-both_router = APIRouter(tags=["Both"])
-
-#Berita
-@both_router.get("/berita")
-async def berita():
-    req_berita = db_beritadanpedoman.fetch({"tipe": "berita"})
-    if len(req_berita.items) == 0:
-        raise HTTPException(
-        status_code=400,
-        detail="Laman Berita Kosong"
-        )
-    
-    isiberita = req_berita.items
-    # PR buat sorting untuk menampilkan isi JSON yang paling recent
-    return isiberita
-
-#Pedoman
-@both_router.get("/pedoman")
-async def pedoman():
-    req_pedoman = db_beritadanpedoman.fetch({"tipe": "pedoman"})
-    if len(req_pedoman.items) == 0:
-        raise HTTPException(
-        status_code=400,
-        detail="Laman Berita Kosong"
-        )
-    
-    isipedoman = req_pedoman.items
-    return isipedoman
-
-#profile admin - user
-@both_router.get("/profile/{id_user}")
-async def profile(id_user: str):
-    user = db_pemberipakan.fetch({'key': id_user})
-    admin = db_admin.fetch({'key', id_user})
-
-    if len(user.items) != 0:
-        return user.items[0]
-
-    if len(admin.items) != 0:
-        return admin.items[0]
-    
-
-#Logout
-@both_router.post("/logout")
-async def logout():
-    return "Logout"
 
 ''''''''''''
 #!! ADMIN !!
@@ -254,6 +272,57 @@ async def delete_pedomanklik(kunci: BeritaDanPedomanDB):
     req_pedoman = db_beritadanpedoman.fetch({"key": kunci})
     db_beritadanpedoman.delete(req_pedoman.items[0]['key'])
     return {'message': 'success'}
+
+''''''''''''
+#!! BOTH !!
+''''''''''''
+
+both_router = APIRouter(tags=["Both"])
+
+#Berita
+@both_router.get("/berita")
+async def berita():
+    req_berita = db_beritadanpedoman.fetch({"tipe": "berita"})
+    if len(req_berita.items) == 0:
+        raise HTTPException(
+        status_code=400,
+        detail="Laman Berita Kosong"
+        )
+    
+    isiberita = req_berita.items
+    # PR buat sorting untuk menampilkan isi JSON yang paling recent
+    return isiberita
+
+#Pedoman
+@both_router.get("/pedoman")
+async def pedoman():
+    req_pedoman = db_beritadanpedoman.fetch({"tipe": "pedoman"})
+    if len(req_pedoman.items) == 0:
+        raise HTTPException(
+        status_code=400,
+        detail="Laman Berita Kosong"
+        )
+    
+    isipedoman = req_pedoman.items
+    return isipedoman
+
+#profile admin - user
+@both_router.get("/profile/{id_user}")
+async def profile(id_user: str):
+    user = db_pemberipakan.fetch({'key': id_user})
+    admin = db_admin.fetch({'key', id_user})
+
+    if len(user.items) != 0:
+        return user.items[0]
+
+    if len(admin.items) != 0:
+        return admin.items[0]
+    
+
+#Logout
+@both_router.post("/logout")
+async def logout():
+    return "Logout"
 
 app.include_router(auth_router)
 app.include_router(user_router)
