@@ -48,10 +48,17 @@ def generateKey(timestap):
 async def redirect_docs():
     return RedirectResponse("/docs")
 
-#Khusus admin
-admin_router = APIRouter(
-prefix="/admin", 
-tags=["admin"])
+#Untuk keamanan
+auth_router = APIRouter(
+prefix="/auth",
+tags=["auth"]
+)
+
+#Khusus user biasa
+user_router = APIRouter(
+prefix="/user",
+tags=["user"]
+)
 
 #Khusus kolam karena banyak hal yang diinput dari user terkait dengan kolam
 kolam_router = APIRouter(
@@ -59,22 +66,15 @@ prefix="/kolam",
 tags=["kolam"]
 )
 
-#Untuk keamanan
-auth_router = APIRouter(
-prefix="/auth",
-tags=["auth"]
-)
+#Khusus admin
+admin_router = APIRouter(
+prefix="/admin", 
+tags=["admin"])
 
 #Khusus untuk berita termasuk memasukan berita dan menampilkan berita
 beritapedoman_router = APIRouter(
 prefix="/beritapedoman",
 tags=["berita_pedoman"]
-)
-
-#Khusus user biasa
-user_router = APIRouter(
-prefix="/user",
-tags=["user"]
 )
 
 ''''''''''''
@@ -328,17 +328,17 @@ async def delete_pedoman():
     db_beritadanpedoman.delete(req_pedoman.items[0]['key'])
     return {'message': 'success'}
 
-
-''''''''''''
-#!! BERITA DAN PEDOMAN !!
-''''''''''''
-
 # untuk menghapus pedoman dengan klik lewat trigger kunci-nya yang bakal dilihat kunci-nya dari artikel yang sedang dilihat
-@beritapedoman_router.delete("/delete/pedoman-byclick")
+@admin_router.delete("/delete/pedoman-byclick")
 async def delete_pedomanklik(kunci: BeritaDanPedomanDB):
     req_pedoman = db_beritadanpedoman.fetch({"key": kunci})
     db_beritadanpedoman.delete(req_pedoman.items[0]['key'])
     return {'message': 'success'}
+
+
+''''''''''''
+#!! BERITA DAN PEDOMAN !!
+''''''''''''
 
 #Berita
 @beritapedoman_router.get("/berita")
@@ -367,10 +367,10 @@ async def pedoman():
     isipedoman = req_pedoman.items
     return isipedoman
 
-app.include_router(admin_router, tags=["admin"])
-app.include_router(kolam_router, tags=["kolam"])
 app.include_router(auth_router, tags=["auth"])
 app.include_router(user_router, tags=["user"])
+app.include_router(kolam_router, tags=["kolam"])
+app.include_router(admin_router, tags=["admin"])
 app.include_router(beritapedoman_router, tags=["berita_pedoman"])
 
 app.add_middleware(
