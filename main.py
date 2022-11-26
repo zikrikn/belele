@@ -48,10 +48,38 @@ def generateKey(timestap):
 async def redirect_docs():
     return RedirectResponse("/docs")
 
+#Khusus admin
+admin_router = APIRouter(
+prefix="/admin", 
+tags=["admin"])
+
+#Khusus kolam karena banyak hal yang diinput dari user terkait dengan kolam
+kolam_router = APIRouter(
+prefix="/kolam",
+tags=["kolam"]
+)
+
+#Untuk keamanan
+auth_router = APIRouter(
+prefix="/auth",
+tags=["auth"]
+)
+
+#Khusus untuk berita termasuk memasukan berita dan menampilkan berita
+beritapedoman_router = APIRouter(
+prefix="/beritapedoman",
+tags=["berita_pedoman"]
+)
+
+#Khusus user biasa
+user_router = APIRouter(
+prefix="/user",
+tags=["user"]
+)
+
 ''''''''''''
 #!! AUTH !!
 ''''''''''''
-auth_router = APIRouter(tags=["Auth"])
 
 #Membuat auth untuk login dan signup
 #!!!Tambahannya signup admin dan delete akun!!!
@@ -87,24 +115,22 @@ async def refresh_token(credentials: HTTPAuthorizationCredentials = Security(sec
     return {'access_token': new_token}
 
 
-@auth_router.post('/secret')
-def secret_data(credentials: HTTPAuthorizationCredentials = Security(security)):
-    token = credentials.credentials
-    if(auth_handler.decode_token(token)):
-        return 'Top Secret data only authorized users can access this info'
+# @auth_router.post('/secret')
+# def secret_data(credentials: HTTPAuthorizationCredentials = Security(security)):
+#     token = credentials.credentials
+#     if(auth_handler.decode_token(token)):
+#         return 'Top Secret data only authorized users can access this info'
 
-@auth_router.get('/notsecret')
-def not_secret_data():
-    return 'Not secret data'
+# @auth_router.get('/notsecret')
+# def not_secret_data():
+#     return 'Not secret data'
 
 ''''''''''''
-#!! USER !!
+#!! KOLAM !!
 ''''''''''''
-
-user_router = APIRouter(tags=["User"])
 
 #takaranlele
-@user_router.post("/inputkolamlele", summary="Mengukur Tarakan Lele", response_model=KolamIn)
+@kolam_router.post("/inputdata", summary="Mengukur Tarakan Lele", response_model=KolamIn)
 async def takaran_leleIn(newKolam: KolamIn, credentials: HTTPAuthorizationCredentials = Security(security)):
     token = credentials.credentials
     if(auth_handler.decode_token(token)):
@@ -147,7 +173,7 @@ async def takaran_leleIn(newKolam: KolamIn, credentials: HTTPAuthorizationCreden
             )
         return kolam
 
-@user_router.post("/restock", summary="Merestock pakan lele", response_model=RestockOut)
+@kolam_router.post("/inputdatarestock", summary="Merestock pakan lele", response_model=RestockOut)
 def menghitung_restock(newRestock: RestockIn, credentials: HTTPAuthorizationCredentials = Security(security)):
     token = credentials.credentials
     if(auth_handler.decode_token(token)):
@@ -181,8 +207,8 @@ def menghitung_restock(newRestock: RestockIn, credentials: HTTPAuthorizationCred
 
         return assign_restock
 
-#get info kolam
-@user_router.get("/infokolam", summary="Melihat Info Kolam")
+#get info all kolam
+@kolam_router.get("/info/all", summary="Melihat Info Kolam")
 async def info_kolam(credentials: HTTPAuthorizationCredentials = Security(security)):
     token = credentials.credentials
     if(auth_handler.decode_token(token)):
@@ -198,7 +224,7 @@ async def info_kolam(credentials: HTTPAuthorizationCredentials = Security(securi
         return all_items
 
 #delete kolam
-@user_router.delete("/delete/{keykolam}", summary="Menghapus Kolam")
+@kolam_router.delete("/delete/{keykolam}", summary="Menghapus Kolam")
 async def delete_kolam(keykolam: str, credentials: HTTPAuthorizationCredentials = Security(security)):
     token = credentials.credentials
     if(auth_handler.decode_token(token)):
@@ -209,7 +235,7 @@ async def delete_kolam(keykolam: str, credentials: HTTPAuthorizationCredentials 
         return {'message': 'success', 'namakolam': namakolam}
 
 #search
-@user_router.get("/search/{something}")
+@kolam_router.get("/info/{something}")
 async def search(something: str, credentials: HTTPAuthorizationCredentials = Security(security)):
     token = credentials.credentials
     if(auth_handler.decode_token(token)):
@@ -222,6 +248,10 @@ async def search(something: str, credentials: HTTPAuthorizationCredentials = Sec
 
         return req_search.items
 
+''''''''''''
+#!! USER !!
+''''''''''''
+
 #notifikasi //buat trigger atau gak refresh setiap berapa menit sekali //atau tentukan waktu untuk trigger //menggunakan deta webhook sebagai alternative
 @user_router.get("/notifikasi/{id_user}")
 async def notifikasi(id_user: str, credentials: HTTPAuthorizationCredentials = Security(security)):
@@ -229,10 +259,31 @@ async def notifikasi(id_user: str, credentials: HTTPAuthorizationCredentials = S
     if(auth_handler.decode_token(token)):
         return {"Notifikasi": id_user}
 
+#profile admin - user
+@user_router.get("/profile/{id_user}")
+async def profile(id_user: str, credentials: HTTPAuthorizationCredentials = Security(security)):
+    token = credentials.credentials
+    if(auth_handler.decode_token(token)):
+        user = db_pemberipakan.fetch({'key': id_user})
+        admin = db_admin.fetch({'key', id_user})
+
+        if len(user.items) != 0:
+            return user.items[0]
+
+        if len(admin.items) != 0:
+            return admin.items[0]
+    
+
+#Logout
+@user_router.post("/logout")
+async def logout(credentials: HTTPAuthorizationCredentials = Security(security)):
+    token = credentials.credentials
+    if(auth_handler.decode_token(token)):
+        return {'message': 'logout success'}
+
 ''''''''''''
 #!! ADMIN !!
 ''''''''''''
-admin_router = APIRouter(tags=["Admin"])
 
 #admin - berita
 @admin_router.post("/post/berita", response_model=BeritaDanPedomanDB)
@@ -277,21 +328,20 @@ async def delete_pedoman():
     db_beritadanpedoman.delete(req_pedoman.items[0]['key'])
     return {'message': 'success'}
 
+
+''''''''''''
+#!! BERITA DAN PEDOMAN !!
+''''''''''''
+
 # untuk menghapus pedoman dengan klik lewat trigger kunci-nya yang bakal dilihat kunci-nya dari artikel yang sedang dilihat
-@admin_router.delete("/delete/pedoman-byclick")
+@beritapedoman_router.delete("/delete/pedoman-byclick")
 async def delete_pedomanklik(kunci: BeritaDanPedomanDB):
     req_pedoman = db_beritadanpedoman.fetch({"key": kunci})
     db_beritadanpedoman.delete(req_pedoman.items[0]['key'])
     return {'message': 'success'}
 
-''''''''''''
-#!! BOTH !!
-''''''''''''
-
-both_router = APIRouter(tags=["Both"])
-
 #Berita
-@both_router.get("/berita")
+@beritapedoman_router.get("/berita")
 async def berita():
     req_berita = db_beritadanpedoman.fetch({"tipe": "berita"})
     if len(req_berita.items) == 0:
@@ -305,7 +355,7 @@ async def berita():
     return isiberita
 
 #Pedoman
-@both_router.get("/pedoman")
+@beritapedoman_router.get("/pedoman")
 async def pedoman():
     req_pedoman = db_beritadanpedoman.fetch({"tipe": "pedoman"})
     if len(req_pedoman.items) == 0:
@@ -317,32 +367,11 @@ async def pedoman():
     isipedoman = req_pedoman.items
     return isipedoman
 
-#profile admin - user
-@both_router.get("/profile/{id_user}")
-async def profile(id_user: str, credentials: HTTPAuthorizationCredentials = Security(security)):
-    token = credentials.credentials
-    if(auth_handler.decode_token(token)):
-        user = db_pemberipakan.fetch({'key': id_user})
-        admin = db_admin.fetch({'key', id_user})
-
-        if len(user.items) != 0:
-            return user.items[0]
-
-        if len(admin.items) != 0:
-            return admin.items[0]
-    
-
-#Logout
-@both_router.post("/logout")
-async def logout(credentials: HTTPAuthorizationCredentials = Security(security)):
-    token = credentials.credentials
-    if(auth_handler.decode_token(token)):
-        return {'message': 'logout success'}
-
-app.include_router(auth_router)
-app.include_router(user_router)
-app.include_router(admin_router)
-app.include_router(both_router)
+app.include_router(admin_router, tags=["admin"])
+app.include_router(kolam_router, tags=["kolam"])
+app.include_router(auth_router, tags=["auth"])
+app.include_router(user_router, tags=["user"])
+app.include_router(beritapedoman_router, tags=["berita_pedoman"])
 
 app.add_middleware(
     CORSMiddleware,
