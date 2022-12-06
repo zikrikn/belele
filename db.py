@@ -19,5 +19,6 @@ db_beritadanpedoman = deta.Base("beritadanpedoman")
 #User
 db_pemberipakan = deta.Base("pemberipakan")
 db_kolam = deta.Base("kolam")
-db_notifikasi = deta.Base("notifikasi")
+db_notifikasiIn = deta.Base("notifikasiIn")
+db_notifikasiOut = deta.Base("notifikasiOut")
 db_pangan = deta.Base("pangan")

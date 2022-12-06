@@ -16,7 +16,6 @@ class KolamIn(BaseModel):
     JumlahLele: int
     BeratLele: int
     TanggalAwalTebarBibit: str
-    TakaranPangan: Union[float, None] = None
 
 class RestockIn(BaseModel): #This Out
     NamaKolam: str #Kolam.id

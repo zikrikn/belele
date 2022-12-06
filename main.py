@@ -2,7 +2,12 @@ from fastapi import FastAPI, HTTPException, APIRouter, Security
 from fastapi.middleware.cors import CORSMiddleware # Untuk CORS Middleware beda tempat. Pakai Fetch & JS untuk implementasinya OR using NEXT.js
 from fastapi.responses import RedirectResponse
 from pydantic import ValidationError
-import time
+from datetime import date, datetime, time
+import time as tm
+from dateutil.relativedelta import relativedelta
+
+#For deta cron
+from deta import App
 
 # Schemas
 from schemas.pemberipakan import *
@@ -33,11 +38,17 @@ from routers.both import both_router
 from routers.user import user_router
 '''
 
-app = FastAPI(
+app = App(FastAPI(
     title="LeMES",
     version="1.0",
     prefix="/api"
-)
+))
+
+# app = FastAPI(
+#     title="LeMES",
+#     version="1.0",
+#     prefix="/api"
+# )
 
 #fungsi untuk generate key agar lastest record muncul paling atas
 def generateKey(timestap):
@@ -45,7 +56,7 @@ def generateKey(timestap):
     return (bigNumber - timestap)
 
 @app.get("/", include_in_schema=False)
-async def redirect_docs():
+def redirect_docs():
     return RedirectResponse("/docs")
 
 #Untuk keamanan
@@ -85,7 +96,7 @@ tags=["berita_pedoman"]
 #!!!Tambahannya signup admin dan delete akun!!!
 
 @auth_router.post('/signup')
-async def signup(user_details: PemberiPakanDB):
+def signup(user_details: PemberiPakanDB):
     if db_pemberipakan.get(user_details.key) != None:
         return 'Account already exists'
     try:
@@ -97,7 +108,7 @@ async def signup(user_details: PemberiPakanDB):
         return error_msg
 
 @auth_router.post('/login')
-async def login(user_details: PemberiPakanIn):
+def login(user_details: PemberiPakanIn):
     user = db_pemberipakan.get(user_details.key)
     if (user is None):
         return HTTPException(status_code=401, detail='Invalid username')
@@ -109,7 +120,7 @@ async def login(user_details: PemberiPakanIn):
     return {'access_token': access_token, 'refresh_token': refresh_token}
 
 @auth_router.get('/refresh_token')
-async def refresh_token(credentials: HTTPAuthorizationCredentials = Security(security)):
+def refresh_token(credentials: HTTPAuthorizationCredentials = Security(security)):
     refresh_token = credentials.credentials
     new_token = auth_handler.refresh_token(refresh_token)
     return {'access_token': new_token}
@@ -128,142 +139,293 @@ async def refresh_token(credentials: HTTPAuthorizationCredentials = Security(sec
 ''''''''''''
 #!! KOLAM !!
 ''''''''''''
-
+# https://stackoverflow.com/questions/4170655/how-to-convert-a-datetime-string-back-to-datetime-object
 #takaranlele
 @kolam_router.post("/inputdata", summary="Mengukur Tarakan Lele", response_model=KolamIn)
-async def takaran_leleIn(newKolam: KolamIn, credentials: HTTPAuthorizationCredentials = Security(security)):
-    token = credentials.credentials
-    if(auth_handler.decode_token(token)):
-        req_kolam = db_kolam.fetch({'NamaKolam': (newKolam.NamaKolam).lower()})
-        if len(req_kolam.items) != 0:
-            raise HTTPException(
-                status_code=400,
-                detail="Data already exist"
-            )
+def takaran_leleIn(newKolam: KolamIn):
+    req_kolam = db_kolam.fetch({'NamaKolam': (newKolam.NamaKolam).lower()})
+    if len(req_kolam.items) != 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Data already exist"
+        )
 
-        kolam = {
-            "key": str(int(generateKey(time.time() * 10000))),
-            "NamaKolam": (newKolam.NamaKolam).lower(), 
-            "JumlahLele": newKolam.JumlahLele,
-            "BeratLele": newKolam.BeratLele,
-            "TanggalAwalTebarBibit": newKolam.TanggalAwalTebarBibit,
-            "TakaranPangan": newKolam.TakaranPangan,
-            "JumlahPakan": 0,
-            "RestockPakan": 0
-        }
+    kolam = {
+        "key": str(int(generateKey(tm.time() * 10000))),
+        "NamaKolam": (newKolam.NamaKolam).lower(), 
+        "JumlahLele": newKolam.JumlahLele,
+        "BeratLele": newKolam.BeratLele,
+        "TanggalAwalTebarBibit": newKolam.TanggalAwalTebarBibit,
+        "TakaranPangan": 0,
+        "JumlahPakan": 0,
+        "RestockPakan": 0
+    }
 
-        hasiljumlah = newKolam.BeratLele * (3/100)
-        print(hasiljumlah)
-        kolam['TakaranPangan'] = hasiljumlah
+    hasiljumlah = newKolam.BeratLele * (3/100)
+    print(hasiljumlah)
+    kolam['TakaranPangan'] = hasiljumlah
 
-        Notifikasi = {
-            "key": str(int(generateKey(time.time() * 10000))),
-            "NotifikasiRemindHarianTakaranWaktuPanen": True
-        }
+    try:
+        validated_new_profile = KolamDB(**kolam)
+        db_kolam.put(validated_new_profile.dict())
+    except ValidationError:
+        raise HTTPException(
+            status_code=404,
+            detail="Invalid input value"
+        )
 
-        db_notifikasi.put(Notifikasi)
+    # Meng-push ke notifikasiIn
 
-        try:
-            validated_new_profile = KolamDB(**kolam)
-            db_kolam.put(validated_new_profile.dict())
-        except ValidationError:
-            raise HTTPException(
-                status_code=404,
-                detail="Invalid input value"
-            )
-        return kolam
+    # Ini untuk notifikasi sehari 3 kali
+    inputNotifikasiHarian = {
+        "key": str(int(generateKey(tm.time() * 10000))),
+        "tipe": "Harian",
+        "waktuMasuk" : date.today().strftime("%m/%d/%Y, %H:%M:%S"),
+        "waktuKeluar" : (date.today() + relativedelta(days=+1)).strftime("%m/%d/%Y, %H:%M:%S"),
+        "waktuHabis" : (date.today() + relativedelta(days=+30)).strftime("%m/%d/%Y, %H:%M:%S")
+    }
+
+    try:
+        validated_new_notificationharian = inputNotifikasi(**inputNotifikasiHarian)
+        db_notifikasiIn.put(validated_new_notificationharian.dict())
+    except ValidationError:
+        raise HTTPException(
+            status_code=404,
+            detail="Invalid input value"
+        )
+
+    # Ini untuk notifikasi panen
+    inputNotifikasiPanen = {
+        "key": str(int(generateKey(tm.time() * 10000))),
+        "tipe": "Panen",
+        "waktuMasuk" : date.today().strftime("%m/%d/%Y, %H:%M:%S"),
+        "waktuKeluar" : (date.today() + relativedelta(months=+2)).strftime("%m/%d/%Y, %H:%M:%S"),
+        "waktuHabis" : (date.today() + relativedelta(months=+2, days=+6)).strftime("%m/%d/%Y, %H:%M:%S")
+    }
+
+    try:
+        validated_new_notificationpanen = inputNotifikasi(**inputNotifikasiPanen)
+        db_notifikasiIn.put(validated_new_notificationpanen.dict())
+    except ValidationError:
+        raise HTTPException(
+            status_code=404,
+            detail="Invalid input value"
+        )
+
+    return kolam
 
 @kolam_router.post("/inputdatarestock", summary="Merestock pakan lele", response_model=RestockOut)
-def menghitung_restock(newRestock: RestockIn, credentials: HTTPAuthorizationCredentials = Security(security)):
-    token = credentials.credentials
-    if(auth_handler.decode_token(token)):
-        req_restock = db_kolam.fetch({'NamaKolam': (newRestock.NamaKolam).lower()})
-        if len(req_restock.items) == 0:
-            raise HTTPException(
-                status_code=400,
-                detail="Data not exist"
-            )
+def menghitung_restock(newRestock: RestockIn):
+    req_restock = db_kolam.fetch({'NamaKolam': (newRestock.NamaKolam).lower()})
+    if len(req_restock.items) == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Data not exist"
+        )
 
-        assign_restock = req_restock.items[0]
-        totalrestock = newRestock.JumlahPakan / assign_restock['BeratLele'] * (3/100)
-        print(totalrestock)
-        
-        update = {
-            "JumlahPakan": newRestock.JumlahPakan,
-            "RestockPangan": totalrestock
-        }
+    assign_restock = req_restock.items[0]
+    totalrestock = newRestock.JumlahPakan / assign_restock['BeratLele'] * (3/100)
+    print(totalrestock)
+    
+    update = {
+        "JumlahPakan": newRestock.JumlahPakan,
+        "RestockPangan": totalrestock
+    }
 
-        assign_restock['JumlahPakan'] = newRestock.JumlahPakan
-        assign_restock['RestockPangan'] = totalrestock
-        
-        db_kolam.update(update, assign_restock['key'])
+    assign_restock['JumlahPakan'] = newRestock.JumlahPakan
+    assign_restock['RestockPangan'] = totalrestock
+    
+    db_kolam.update(update, assign_restock['key'])
 
-        Notifikasi = {
-            "key": str(int(generateKey(time.time() * 10000))),
-            "NotifikasiRestockPakan": True
-        }
+    # Ini untuk notifikasi restock
 
-        db_notifikasi.put(Notifikasi)
+    # Kayanya sih buat beberapa kondisi, most likely it would be six conditions with different ones
 
-        return assign_restock
+    hariRestock = 20
 
-#get info all kolam
+    inputNotifikasiRestock = {
+        "key": str(int(generateKey(tm.time() * 10000))),
+        "tipe": "Restock",
+        "waktuMasuk" : date.today().strftime("%m/%d/%Y, %H:%M:%S"),
+        "waktuKeluar" : (date.today() + relativedelta(days=+hariRestock)).strftime("%m/%d/%Y, %H:%M:%S"), 
+        "waktuHabis" : (date.today() + relativedelta(days=+hariRestock) + relativedelta(days=+2)).strftime("%m/%d/%Y, %H:%M:%S")
+    }
+
+    try:
+        validated_new_notificationrestock = inputNotifikasi(**inputNotifikasiRestock)
+        db_notifikasiIn.put(validated_new_notificationrestock.dict())
+    except ValidationError:
+        raise HTTPException(
+            status_code=404,
+            detail="Invalid input value"
+        )
+
+    return assign_restock
+
+# get info all kolam
 @kolam_router.get("/info/all", summary="Melihat Info Kolam")
-async def info_kolam(credentials: HTTPAuthorizationCredentials = Security(security)):
-    token = credentials.credentials
-    if(auth_handler.decode_token(token)):
-        res_kolam = db_kolam.fetch()
-        all_items = res_kolam.items
+def info_kolam():
+    res_kolam = db_kolam.fetch()
+    all_items = res_kolam.items
 
-        if len(all_items) == 0:
-                raise HTTPException(
-                status_code=400,
-                detail="Tidak ada data kolam"
-            )
-        
-        return all_items
+    if len(all_items) == 0:
+            raise HTTPException(
+            status_code=400,
+            detail="Tidak ada data kolam"
+        )
 
-#delete kolam
+    return all_items
+
+# delete kolam
 @kolam_router.delete("/delete/{keykolam}", summary="Menghapus Kolam")
-async def delete_kolam(keykolam: str, credentials: HTTPAuthorizationCredentials = Security(security)):
-    token = credentials.credentials
-    if(auth_handler.decode_token(token)):
-        req_kolam = db_kolam.get(keykolam)
-        namakolam = req_kolam['NamaKolam']
-        db_kolam.delete(req_kolam['key'])
+def delete_kolam(keykolam: str):
+    req_kolam = db_kolam.get(keykolam)
+    namakolam = req_kolam['NamaKolam']
+    db_kolam.delete(req_kolam['key'])
 
-        return {'message': 'success', 'namakolam': namakolam}
+    return {'message': 'success', 'namakolam': namakolam}
 
-#search
+# search
 @kolam_router.get("/info/{something}")
-async def search(something: str, credentials: HTTPAuthorizationCredentials = Security(security)):
-    token = credentials.credentials
-    if(auth_handler.decode_token(token)):
-        req_search = db_kolam.fetch({'NamaKolam': (something).lower()}) #use fixed query
-        if len(req_search.items) == 0:
-                raise HTTPException(
-                status_code=400,
-                detail="Data not exist"
-            )
+def search(something: str):
+    req_search = db_kolam.fetch({'NamaKolam': (something).lower()}) #use fixed query
+    if len(req_search.items) == 0:
+            raise HTTPException(
+            status_code=400,
+            detail="Data not exist"
+        )
 
-        return req_search.items
+    return req_search.items
 
 ''''''''''''
 #!! USER !!
 ''''''''''''
 
-#notifikasi //buat trigger atau gak refresh setiap berapa menit sekali //atau tentukan waktu untuk trigger //menggunakan deta webhook sebagai alternative
-@user_router.get("/notifikasi/{id_user}")
-async def notifikasi(id_user: str, credentials: HTTPAuthorizationCredentials = Security(security)):
-    token = credentials.credentials
-    if(auth_handler.decode_token(token)):
-        return {"Notifikasi": id_user}
+#notifikasi //buat trigger atau gak refresh setiap berapa menit sekali //atau tentukan waktu untuk trigger
+@app.lib.cron()
+@user_router.get("/notifikasi")
+def notifikasi(e = None):
+    inT1 = time(8, 00, 00)
+    inT2 = time(12, 00, 00)
+    inT3 = time(17, 00, 00)
+
+    outT1 = time(8, 1, 00)
+    outT2 = time(12, 1, 00)
+    outT3 = time(17, 1, 00)
+
+    inPagi = datetime.combine(date.today(), inT1)
+    outPagi = datetime.combine(date.today(), outT1)
+    inSiang = datetime.combine(date.today(), inT2)
+    outSiang = datetime.combine(date.today(), outT2)
+    inSore = datetime.combine(date.today(), inT3)
+    outSore = datetime.combine(date.today(), outT3)
+
+    #we have to make new row first ig
+    #so this is just put the data to the database
+
+    #this is for panen
+    #bisa diakalin lewat kondisi ini jadi for-nya 
+    notif_resHarian = db_notifikasiIn.fetch({"tipe":"Harian"})
+    all_itemsHarian = notif_resHarian.items
+    
+    notif_resPanen = db_notifikasiIn.fetch({"tipe":"Panen"})
+    all_itemsPanen = notif_resPanen.items
+
+    notif_resRestock = db_notifikasiIn.fetch({"tipe":"Restock"})
+    all_itemsRestock = notif_resRestock.items
+
+    for i in range(0, len(all_itemsHarian)):
+        #Ini untuk notifikasi harian
+        if (date.today() >= datetime.strptime((all_itemsHarian[i]['waktuKeluar']), "%m/%d/%Y, %H:%M:%S").date() 
+        and date.today() <= datetime.strptime((all_itemsHarian[i]['waktuHabis']), "%m/%d/%Y, %H:%M:%S").date()):
+            if (datetime.now() >= inPagi and datetime.now() <= outPagi):
+                outputNotifikasiHarian = {
+                    "key": str(int(generateKey(tm.time() * 10000))),
+                    "tipe": "Harian",
+                    "waktuKeluar" : datetime.now(),
+                    "messages" : "Reminder untuk memberi pakan pada Pagi hari!"
+                }
+                db_notifikasiOut.put(outputNotifikasiHarian)
+            elif (datetime.now() >= inSiang and datetime.now() <= outSiang):
+                outputNotifikasiHarian = {
+                    "key": str(int(generateKey(tm.time() * 10000))),
+                    "tipe": "Harian",
+                    "waktuKeluar" : datetime.now(),
+                    "messages" : "Reminder untuk memberi pakan pada Siang hari!"
+                }
+                db_notifikasiOut.put(outputNotifikasiHarian)
+            elif (datetime.now() >= inSore and datetime.now() <= outSore):
+                outputNotifikasiHarian = {
+                    "key": str(int(generateKey(tm.time() * 10000))),
+                    "tipe": "Harian",
+                    "waktuKeluar" : datetime.now(),
+                    "messages" : "Reminder untuk memberi pakan pada Sore hari!"
+                }
+                db_notifikasiOut.put(outputNotifikasiHarian)
+
+    for i in range(0, len(all_itemsPanen)):        
+        #Ini untuk notifkasi panen
+        if (date.today() >= datetime.strptime((all_itemsPanen[i]['waktuKeluar']), "%m/%d/%Y, %H:%M:%S").date() 
+        and date.today() <= datetime.strptime((all_itemsPanen[i]['waktuHabis']), "%m/%d/%Y, %H:%M:%S").date()):
+            if (date.today() == datetime.strptime((all_itemsPanen[i]['waktuKeluar']), "%m/%d/%Y, %H:%M:%S").date()) :
+                if (datetime.now() >= datetime.combine(date.today(), time(10, 1, 00)) and datetime.now() <= datetime.combine(date.today(), time(10, 2, 00))):
+                    outputNotifikasiPanen = {
+                        "key": str(int(generateKey(tm.time() * 10000))),
+                        "tipe": "Panen",
+                        "waktuKeluar" : datetime.now(),
+                        "messages" : "Reminder H-3 Sebelum Panen!"
+                    }
+                    db_notifikasiOut.put(outputNotifikasiPanen)
+            elif (date.today() == datetime.strptime((all_itemsPanen[i]['waktuKeluar']), "%m/%d/%Y, %H:%M:%S").date() + relativedelta(days=+2)):
+                if (datetime.now() >= datetime.combine(date.today(), time(12, 1, 00)) and datetime.now() <= datetime.combine(date.today(), time(12, 2, 00))):
+                    outputNotifikasiPanen = {
+                        "key": str(int(generateKey(tm.time() * 10000))),
+                        "tipe": "Panen",
+                        "waktuKeluar" : datetime.now(),
+                        "messages" : "Reminder H-2 Sebelum Panen!"
+                    }
+                    db_notifikasiOut.put(outputNotifikasiPanen)
+            elif (date.today() == datetime.strptime((all_itemsPanen[i]['waktuKeluar']), "%m/%d/%Y, %H:%M:%S").date() + relativedelta(days=+3)):
+                if (datetime.now() >= datetime.combine(date.today(), time(17, 1, 00)) and datetime.now() <= datetime.combine(date.today(), time(17, 2, 00))):
+                    outputNotifikasiPanen = {
+                        "key": str(int(generateKey(tm.time() * 10000))),
+                        "tipe": "Panen",
+                        "waktuKeluar" : datetime.now(),
+                        "messages" : "Waktunya Panen!"
+                    }
+                    db_notifikasiOut.put(outputNotifikasiPanen)
+
+    for i in range(0, len(all_itemsRestock)):
+        #Ini untuk notifikasi restock
+        if (date.today() >= datetime.strptime((all_itemsRestock[i]['waktuKeluar']), "%m/%d/%Y, %H:%M:%S").date() 
+        and date.today() <= datetime.strptime((all_itemsRestock[i]['waktuHabis']), "%m/%d/%Y, %H:%M:%S").date()):
+            if (date.today() == datetime.strptime((all_itemsRestock[i]['waktuKeluar']), "%m/%d/%Y, %H:%M:%S").date() ):
+                if (datetime.now() >= datetime.combine(date.today(), time(10, 2, 00)) and datetime.now() <= datetime.combine(date.today(), time(10, 3, 00))):
+                    outputNotifikasiRestock = {
+                        "key": str(int(generateKey(tm.time() * 10000))),
+                        "tipe": "Restock",
+                        "waktuKeluar" : datetime.now(),
+                        "messages" : "Reminder H-1 Sebelum Restock Pakan!"
+                    }
+                    db_notifikasiOut.put(outputNotifikasiRestock)
+            elif (date.today() == datetime.strptime((all_itemsRestock[i]['waktuKeluar']), "%m/%d/%Y, %H:%M:%S").date()  + relativedelta(days=+1)):
+                if (datetime.now() >= datetime.combine(date.today(), time(12, 2, 00)) and datetime.now() <= datetime.combine(date.today(), time(12, 3, 00))):
+                    outputNotifikasiRestock = {
+                        "key": str(int(generateKey(tm.time() * 10000))),
+                        "tipe": "Restock",
+                        "waktuKeluar" : datetime.now(),
+                        "messages" : "Waktunya Restock Pakan!"
+                    }
+                    db_notifikasiOut.put(outputNotifikasiRestock)
+
+    #this is for return the value that in db, all of values
+    res_out_notifikasi = db_notifikasiOut.fetch();
+    
+    return res_out_notifikasi.items
 
 #profile admin - user
 @user_router.get("/profile/{id_user}")
-async def profile(id_user: str, credentials: HTTPAuthorizationCredentials = Security(security)):
-    token = credentials.credentials
-    if(auth_handler.decode_token(token)):
+def profile(id_user: str):
         user = db_pemberipakan.fetch({'key': id_user})
         admin = db_admin.fetch({'key', id_user})
 
@@ -272,14 +434,11 @@ async def profile(id_user: str, credentials: HTTPAuthorizationCredentials = Secu
 
         if len(admin.items) != 0:
             return admin.items[0]
-    
 
 #Logout
 @user_router.post("/logout")
-async def logout(credentials: HTTPAuthorizationCredentials = Security(security)):
-    token = credentials.credentials
-    if(auth_handler.decode_token(token)):
-        return {'message': 'logout success'}
+def logout():
+    return {'message': 'logout success'}
 
 ''''''''''''
 #!! ADMIN !!
@@ -287,10 +446,10 @@ async def logout(credentials: HTTPAuthorizationCredentials = Security(security))
 
 #admin - berita
 @admin_router.post("/post/berita", response_model=BeritaDanPedomanDB)
-async def post_berita(berita: BeritaDanPedomanIn):
+def post_berita(berita: BeritaDanPedomanIn):
 
     berita = {
-        "key": str(int(generateKey(time.time() * 10000))),
+        "key": str(int(generateKey(tm.time() * 10000))),
         "tipe": "berita",
         "judulBeritaDanPedoman": berita.judulBeritaDanPedoman,
         "tanggalBeritaDanPedoman": berita.tanggalBeritaDanPedoman,
@@ -301,10 +460,10 @@ async def post_berita(berita: BeritaDanPedomanIn):
 
 #admin - pedoman
 @admin_router.post("/post/pedoman", response_model=BeritaDanPedomanDB)
-async def post_Pedoman(pedoman: BeritaDanPedomanIn):
+def post_Pedoman(pedoman: BeritaDanPedomanIn):
 
     pedoman = {
-        "key": str(int(generateKey(time.time() * 10000))),
+        "key": str(int(generateKey(tm.time() * 10000))),
         "tipe": "pedoman",
         "judulBeritaDanPedoman": pedoman.judulBeritaDanPedoman,
         "tanggalBeritaDanPedoman": pedoman.tanggalBeritaDanPedoman,
@@ -315,7 +474,7 @@ async def post_Pedoman(pedoman: BeritaDanPedomanIn):
 
 #admin - delete berita //nanti pakai key-nya untuk menghapus
 @admin_router.delete("/delete/berita")
-async def delete_berita():
+def delete_berita():
     req_berita = db_beritadanpedoman.fetch({"tipe": "berita"})
     db_beritadanpedoman.delete(req_berita.items[0]['key'])
     return {'message': 'success'}
@@ -323,14 +482,14 @@ async def delete_berita():
 # admin - delete pedoman - the lastest 
 # maybe we can changes this into by "key"
 @admin_router.delete("/delete/pedoman")
-async def delete_pedoman():
+def delete_pedoman():
     req_pedoman = db_beritadanpedoman.fetch({"tipe": "pedoman"})
     db_beritadanpedoman.delete(req_pedoman.items[0]['key'])
     return {'message': 'success'}
 
 # untuk menghapus pedoman dengan klik lewat trigger kunci-nya yang bakal dilihat kunci-nya dari artikel yang sedang dilihat
 @admin_router.delete("/delete/pedoman-byclick")
-async def delete_pedomanklik(kunci: BeritaDanPedomanDB):
+def delete_pedomanklik(kunci: BeritaDanPedomanDB):
     req_pedoman = db_beritadanpedoman.fetch({"key": kunci})
     db_beritadanpedoman.delete(req_pedoman.items[0]['key'])
     return {'message': 'success'}
@@ -342,7 +501,7 @@ async def delete_pedomanklik(kunci: BeritaDanPedomanDB):
 
 #Berita
 @beritapedoman_router.get("/berita")
-async def berita():
+def berita():
     req_berita = db_beritadanpedoman.fetch({"tipe": "berita"})
     if len(req_berita.items) == 0:
         raise HTTPException(
@@ -356,7 +515,7 @@ async def berita():
 
 #Pedoman
 @beritapedoman_router.get("/pedoman")
-async def pedoman():
+def pedoman():
     req_pedoman = db_beritadanpedoman.fetch({"tipe": "pedoman"})
     if len(req_pedoman.items) == 0:
         raise HTTPException(
