@@ -342,7 +342,7 @@ def notifikasi(e = None):
                 outputNotifikasiHarian = {
                     "key": str(int(generateKey(tm.time() * 10000))),
                     "tipe": "Harian",
-                    "waktuKeluar" : datetime.now(),
+                    "waktuKeluar" : datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
                     "messages" : "Reminder untuk memberi pakan pada Pagi hari!"
                 }
                 db_notifikasiOut.put(outputNotifikasiHarian)
@@ -350,7 +350,7 @@ def notifikasi(e = None):
                 outputNotifikasiHarian = {
                     "key": str(int(generateKey(tm.time() * 10000))),
                     "tipe": "Harian",
-                    "waktuKeluar" : datetime.now(),
+                    "waktuKeluar" : datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
                     "messages" : "Reminder untuk memberi pakan pada Siang hari!"
                 }
                 db_notifikasiOut.put(outputNotifikasiHarian)
@@ -358,7 +358,7 @@ def notifikasi(e = None):
                 outputNotifikasiHarian = {
                     "key": str(int(generateKey(tm.time() * 10000))),
                     "tipe": "Harian",
-                    "waktuKeluar" : datetime.now(),
+                    "waktuKeluar" : datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
                     "messages" : "Reminder untuk memberi pakan pada Sore hari!"
                 }
                 db_notifikasiOut.put(outputNotifikasiHarian)
@@ -372,7 +372,7 @@ def notifikasi(e = None):
                     outputNotifikasiPanen = {
                         "key": str(int(generateKey(tm.time() * 10000))),
                         "tipe": "Panen",
-                        "waktuKeluar" : datetime.now(),
+                        "waktuKeluar" : datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
                         "messages" : "Reminder H-3 Sebelum Panen!"
                     }
                     db_notifikasiOut.put(outputNotifikasiPanen)
@@ -381,7 +381,7 @@ def notifikasi(e = None):
                     outputNotifikasiPanen = {
                         "key": str(int(generateKey(tm.time() * 10000))),
                         "tipe": "Panen",
-                        "waktuKeluar" : datetime.now(),
+                        "waktuKeluar" : datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
                         "messages" : "Reminder H-2 Sebelum Panen!"
                     }
                     db_notifikasiOut.put(outputNotifikasiPanen)
@@ -390,7 +390,7 @@ def notifikasi(e = None):
                     outputNotifikasiPanen = {
                         "key": str(int(generateKey(tm.time() * 10000))),
                         "tipe": "Panen",
-                        "waktuKeluar" : datetime.now(),
+                        "waktuKeluar" : datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
                         "messages" : "Waktunya Panen!"
                     }
                     db_notifikasiOut.put(outputNotifikasiPanen)
@@ -404,7 +404,7 @@ def notifikasi(e = None):
                     outputNotifikasiRestock = {
                         "key": str(int(generateKey(tm.time() * 10000))),
                         "tipe": "Restock",
-                        "waktuKeluar" : datetime.now(),
+                        "waktuKeluar" : datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
                         "messages" : "Reminder H-1 Sebelum Restock Pakan!"
                     }
                     db_notifikasiOut.put(outputNotifikasiRestock)
@@ -413,7 +413,7 @@ def notifikasi(e = None):
                     outputNotifikasiRestock = {
                         "key": str(int(generateKey(tm.time() * 10000))),
                         "tipe": "Restock",
-                        "waktuKeluar" : datetime.now(),
+                        "waktuKeluar" : datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
                         "messages" : "Waktunya Restock Pakan!"
                     }
                     db_notifikasiOut.put(outputNotifikasiRestock)
