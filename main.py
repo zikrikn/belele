@@ -309,16 +309,16 @@ def notifikasi(e = None):
     inT2 = time(12, 00, 00)
     inT3 = time(17, 00, 00)
 
-    # outT1 = time(8, 1, 00)
-    # outT2 = time(12, 1, 00)
-    # outT3 = time(17, 1, 00)
+    outT1 = time(8, 00, 9)
+    outT2 = time(12, 00, 9)
+    outT3 = time(17, 00, 9)
 
     inPagi = datetime.combine(date.today(), inT1)
     inSiang = datetime.combine(date.today(), inT2)
     inSore = datetime.combine(date.today(), inT3)
-    # outPagi = datetime.combine(date.today(), outT1)
-    # outSiang = datetime.combine(date.today(), outT2)
-    # outSore = datetime.combine(date.today(), outT3)
+    outPagi = datetime.combine(date.today(), outT1)
+    outSiang = datetime.combine(date.today(), outT2)
+    outSore = datetime.combine(date.today(), outT3)
 
     #we have to make new row first ig
     #so this is just put the data to the database
@@ -338,7 +338,7 @@ def notifikasi(e = None):
         #Ini untuk notifikasi harian
         if (date.today() >= datetime.strptime((all_itemsHarian[i]['waktuKeluar']), "%m/%d/%Y, %H:%M:%S").date() 
         and date.today() <= datetime.strptime((all_itemsHarian[i]['waktuHabis']), "%m/%d/%Y, %H:%M:%S").date()):
-            if (datetime.now() == inPagi):
+            if (datetime.now() >= inPagi and datetime.now() <= outPagi):
                 outputNotifikasiHarian = {
                     "key": str(int(generateKey(tm.time() * 10000))),
                     "tipe": "Harian",
@@ -346,7 +346,7 @@ def notifikasi(e = None):
                     "messages" : "Reminder untuk memberi pakan pada Pagi hari!"
                 }
                 db_notifikasiOut.put(outputNotifikasiHarian)
-            elif (datetime.now() == inSiang):
+            elif (datetime.now() >= inSiang and datetime.now() <= outSiang):
                 outputNotifikasiHarian = {
                     "key": str(int(generateKey(tm.time() * 10000))),
                     "tipe": "Harian",
@@ -354,7 +354,7 @@ def notifikasi(e = None):
                     "messages" : "Reminder untuk memberi pakan pada Siang hari!"
                 }
                 db_notifikasiOut.put(outputNotifikasiHarian)
-            elif (datetime.now() == inSore):
+            elif (datetime.now() >= inSore and datetime.now() <= outSore):
                 outputNotifikasiHarian = {
                     "key": str(int(generateKey(tm.time() * 10000))),
                     "tipe": "Harian",
@@ -368,7 +368,7 @@ def notifikasi(e = None):
         if (date.today() >= datetime.strptime((all_itemsPanen[i]['waktuKeluar']), "%m/%d/%Y, %H:%M:%S").date() 
         and date.today() <= datetime.strptime((all_itemsPanen[i]['waktuHabis']), "%m/%d/%Y, %H:%M:%S").date()):
             if (date.today() == datetime.strptime((all_itemsPanen[i]['waktuKeluar']), "%m/%d/%Y, %H:%M:%S").date()) :
-                if (datetime.now() == datetime.combine(date.today(), time(10, 1, 00))):
+                if (datetime.now() >= datetime.combine(date.today(), time(10, 1, 00)) and datetime.now() <= datetime.combine(date.today(), time(10, 1, 9))):
                     outputNotifikasiPanen = {
                         "key": str(int(generateKey(tm.time() * 10000))),
                         "tipe": "Panen",
@@ -377,7 +377,7 @@ def notifikasi(e = None):
                     }
                     db_notifikasiOut.put(outputNotifikasiPanen)
             elif (date.today() == datetime.strptime((all_itemsPanen[i]['waktuKeluar']), "%m/%d/%Y, %H:%M:%S").date() + relativedelta(days=+2)):
-                if (datetime.now() == datetime.combine(date.today(), time(12, 1, 00))):
+                if (datetime.now() >= datetime.combine(date.today(), time(12, 1, 00)) and datetime.now() <= datetime.combine(date.today(), time(12, 1, 9))):
                     outputNotifikasiPanen = {
                         "key": str(int(generateKey(tm.time() * 10000))),
                         "tipe": "Panen",
@@ -386,7 +386,7 @@ def notifikasi(e = None):
                     }
                     db_notifikasiOut.put(outputNotifikasiPanen)
             elif (date.today() == datetime.strptime((all_itemsPanen[i]['waktuKeluar']), "%m/%d/%Y, %H:%M:%S").date() + relativedelta(days=+3)):
-                if (datetime.now() == datetime.combine(date.today(), time(17, 1, 00))):
+                if (datetime.now() >= datetime.combine(date.today(), time(17, 1, 00)) and datetime.now() <= datetime.combine(date.today(), time(10, 1, 9))):
                     outputNotifikasiPanen = {
                         "key": str(int(generateKey(tm.time() * 10000))),
                         "tipe": "Panen",
@@ -400,7 +400,7 @@ def notifikasi(e = None):
         if (date.today() >= datetime.strptime((all_itemsRestock[i]['waktuKeluar']), "%m/%d/%Y, %H:%M:%S").date() 
         and date.today() <= datetime.strptime((all_itemsRestock[i]['waktuHabis']), "%m/%d/%Y, %H:%M:%S").date()):
             if (date.today() == datetime.strptime((all_itemsRestock[i]['waktuKeluar']), "%m/%d/%Y, %H:%M:%S").date() ):
-                if (datetime.now() == datetime.combine(date.today(), time(10, 2, 00))):
+                if (datetime.now() >= datetime.combine(date.today(), time(10, 2, 00)) and datetime.now() <= datetime.combine(date.today(), time(10, 2, 9))):
                     outputNotifikasiRestock = {
                         "key": str(int(generateKey(tm.time() * 10000))),
                         "tipe": "Restock",
@@ -409,7 +409,7 @@ def notifikasi(e = None):
                     }
                     db_notifikasiOut.put(outputNotifikasiRestock)
             elif (date.today() == datetime.strptime((all_itemsRestock[i]['waktuKeluar']), "%m/%d/%Y, %H:%M:%S").date()  + relativedelta(days=+1)):
-                if (datetime.now() == datetime.combine(date.today(), time(12, 2, 00))):
+                if (datetime.now() >= datetime.combine(date.today(), time(12, 2, 00)) and datetime.now() <= datetime.combine(date.today(), time(10, 1, 00))):
                     outputNotifikasiRestock = {
                         "key": str(int(generateKey(tm.time() * 10000))),
                         "tipe": "Restock",
