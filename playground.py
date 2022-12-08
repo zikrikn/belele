@@ -1,5 +1,6 @@
 from datetime import date, datetime, time, timedelta
 from dateutil.relativedelta import relativedelta
+import time as tm
 
 
 h = date.today() + relativedelta(days=+2) 
@@ -12,8 +13,9 @@ print("HELLO : ", v)
 y = date.today()
 print(y)
 
-if date.today() != date.today():
+if date.today() == date.today():
     print("HEYO")
+    tm.sleep(10)
 
 t1 = time(8, 00, 00)
 t2 = time(12, 00, 00)

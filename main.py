@@ -346,7 +346,7 @@ def notifikasi(e = None):
                     "messages" : "Reminder untuk memberi pakan pada Pagi hari!"
                 }
                 db_notifikasiOut.put(outputNotifikasiHarian)
-                tm.sleep(10)
+                tm.sleep(60)
             elif (datetime.now() >= inSiang and datetime.now() <= outSiang):
                 outputNotifikasiHarian = {
                     "key": str(int(generateKey(tm.time() * 10000))),
@@ -355,7 +355,7 @@ def notifikasi(e = None):
                     "messages" : "Reminder untuk memberi pakan pada Siang hari!"
                 }
                 db_notifikasiOut.put(outputNotifikasiHarian)
-                tm.sleep(10)
+                tm.sleep(60)
             elif (datetime.now() >= inSore and datetime.now() <= outSore):
                 outputNotifikasiHarian = {
                     "key": str(int(generateKey(tm.time() * 10000))),
@@ -364,7 +364,7 @@ def notifikasi(e = None):
                     "messages" : "Reminder untuk memberi pakan pada Sore hari!"
                 }
                 db_notifikasiOut.put(outputNotifikasiHarian)
-                tm.sleep(10)
+                tm.sleep(60)
 
     for i in range(0, len(all_itemsPanen)):        
         #Ini untuk notifkasi panen
@@ -379,7 +379,7 @@ def notifikasi(e = None):
                         "messages" : "Reminder H-2 Sebelum Panen!"
                     }
                     db_notifikasiOut.put(outputNotifikasiPanen)
-                    tm.sleep(10)
+                    tm.sleep(60)
             elif (date.today() == datetime.strptime((all_itemsPanen[i]['waktuKeluar']), "%m/%d/%Y, %H:%M:%S").date() + relativedelta(days=+2)):
                 if (datetime.now() >= datetime.combine(date.today(), time(12, 1, 00)) and datetime.now() <= datetime.combine(date.today(), time(12, 2, 00))):
                     outputNotifikasiPanen = {
@@ -389,7 +389,7 @@ def notifikasi(e = None):
                         "messages" : "Reminder H-1 Sebelum Panen!"
                     }
                     db_notifikasiOut.put(outputNotifikasiPanen)
-                    tm.sleep(10)
+                    tm.sleep(60)
             elif (date.today() == datetime.strptime((all_itemsPanen[i]['waktuKeluar']), "%m/%d/%Y, %H:%M:%S").date() + relativedelta(days=+3)):
                 if (datetime.now() >= datetime.combine(date.today(), time(17, 1, 00)) and datetime.now() <= datetime.combine(date.today(), time(10, 2, 00))):
                     outputNotifikasiPanen = {
@@ -399,7 +399,7 @@ def notifikasi(e = None):
                         "messages" : "Waktunya Panen!"
                     }
                     db_notifikasiOut.put(outputNotifikasiPanen)
-                    tm.sleep(10)
+                    tm.sleep(60)
 
     for i in range(0, len(all_itemsRestock)):
         #Ini untuk notifikasi restock
@@ -414,7 +414,7 @@ def notifikasi(e = None):
                         "messages" : "Reminder H-1 Sebelum Restock Pakan!"
                     }
                     db_notifikasiOut.put(outputNotifikasiRestock)
-                    tm.sleep(10)
+                    tm.sleep(60)
             elif (date.today() == datetime.strptime((all_itemsRestock[i]['waktuKeluar']), "%m/%d/%Y, %H:%M:%S").date()  + relativedelta(days=+1)):
                 if (datetime.now() >= datetime.combine(date.today(), time(12, 2, 00)) and datetime.now() <= datetime.combine(date.today(), time(10, 3, 00))):
                     outputNotifikasiRestock = {
@@ -424,7 +424,7 @@ def notifikasi(e = None):
                         "messages" : "Waktunya Restock Pakan!"
                     }
                     db_notifikasiOut.put(outputNotifikasiRestock)
-                    tm.sleep(10)
+                    tm.sleep(60)
 
     #this is for return the value that in db, all of values
     res_out_notifikasi = db_notifikasiOut.fetch();
