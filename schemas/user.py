@@ -1,12 +1,12 @@
-from typing import Union
-from uuid import UUID
 from pydantic import BaseModel, EmailStr, Field
+from typing import Union
 
 class UserDB(BaseModel):
     full_name: str
     username: str
     email: EmailStr
     hashed_password: str
+    photoprofile: Union[str, None] = None
 
 class UserAuth(BaseModel):
     full_name: str
@@ -18,3 +18,9 @@ class UserOut(BaseModel):
     full_name: str
     username: str
     email: EmailStr
+
+class ProfileOut(BaseModel):
+    full_name: str
+    username: str
+    email: EmailStr
+    photoprofile: Union[str, None] = None

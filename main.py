@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, APIRouter, Depends, status
+from fastapi import FastAPI, HTTPException, APIRouter, Depends, status, UploadFile
 # , Security
 from fastapi.middleware.cors import CORSMiddleware # Untuk CORS Middleware beda tempat. Pakai Fetch & JS untuk implementasinya OR using NEXT.js
 from fastapi.responses import RedirectResponse
@@ -15,7 +15,6 @@ from fastapi.security import OAuth2PasswordRequestForm
 # Schemas
 from schemas.kolam import *
 from schemas.notifikasi import *
-from schemas.admin import *
 from schemas.beritadanpedoman import *
 from schemas.user import *
 from utils import *
@@ -24,6 +23,9 @@ from deps import get_current_user
 
 # Connecting to database
 from db import *
+
+# Connecting to drive
+from drive import *
 
 # Unicorn
 import uvicorn
@@ -152,9 +154,32 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
         'refresh_token': create_refresh_token(req_user['key'])
     }
 
-@user_router.get("/me", summary="Get logged in user detail", response_model=UserOut)
-async def get_me(user: UserOut = Depends(get_current_user)):
+@user_router.get("/me", summary="Get logged in user detail", response_model=ProfileOut)
+async def get_me(user: ProfileOut = Depends(get_current_user)):
     return user
+
+@user_router.post("/upload_photoprofile", response_model=ProfileOut, summary="Upload photo profile")
+async def upload_photo_profile(img: UploadFile, user: UserOut = Depends(get_current_user)):
+    req_user = db_user.fetch({'username': user.username})
+
+    if len(req_user.items) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Data not exist"
+        )
+    
+    file_content = await img.read()
+    filename = f"photoprofile_{user.username}.jpg"
+    drive_photoprofile.put(filename, file_content)
+    
+    update = {
+        'photoprofile': filename
+    }
+    update_photoprofile = req_user.items[0]
+    update_photoprofile['photoprofile'] = filename
+    db_user.update(update, update_photoprofile['key'])
+    
+    return update_photoprofile
 
 # PR sekarang adalah gambar profile, gambar berita, dan pedoman
 # untuk gambar profile nanti dulu
@@ -297,7 +322,7 @@ def menghitung_restock(nama_kolam: str, user: UserOut = Depends(get_current_user
     update = {
         "waktu_restock": waktu_reminder_restock_result.strftime("%m/%d/%Y, %H:%M:%S"),
     }
-    
+    assign_restock['waktu_restock'] = waktu_reminder_restock_result.strftime("%m/%d/%Y, %H:%M:%S")
     db_kolam.update(update, assign_restock['key'])
 
     # Ini untuk notifikasi restock
@@ -571,27 +596,38 @@ def get_notifikasi(user: UserOut = Depends(get_current_user)):
 
 #admin - berita
 @admin_router.post("/post/berita", response_model=BeritaDanPedomanDB)
-def post_berita(berita: BeritaDanPedomanIn):
+async def post_berita(berita: BeritaDanPedomanIn, img: UploadFile):
+
+    file_content = await img.read()
+    file_name = f"{berita.judul_berita_dan_pedoman}.jpg"
+    drive_thumbnail.put(file_name, file_content)
+
     berita = {
         "key": str(int(generateKey(tm.time() * 10000))),
         "tipe": "berita",
         "judul_berita_dan_pedoman": berita.judul_berita_dan_pedoman,
         "tanggal_berita_dan_pedoman": berita.tanggal_berita_dan_pedoman,
         "isi_berita_dan_pedoman": berita.isi_berita_dan_pedoman,
-        "file_berita_dan_pedoman": berita.file_berita_dan_pedoman
+        "thumbnail": file_name
     }
+
     return db_beritadanpedoman.put(berita)
 
 #admin - pedoman
 @admin_router.post("/post/pedoman", response_model=BeritaDanPedomanDB)
-def post_Pedoman(pedoman: BeritaDanPedomanIn):
+async def post_Pedoman(pedoman: BeritaDanPedomanIn, img: UploadFile):
+
+    file_content = await img.read()
+    file_name = f"{pedoman.judul_berita_dan_pedoman}.jpg"
+    drive_thumbnail.put(file_name, file_content)
+
     pedoman = {
         "key": str(int(generateKey(tm.time() * 10000))),
         "tipe": "pedoman",
         "judul_berita_dan_pedoman": pedoman.judul_berita_dan_pedoman,
         "tanggal_berita_dan_pedoman": pedoman.tanggal_berita_dan_pedoman,
         "isi_berita_dan_pedoman": pedoman.isi_berita_dan_pedoman,
-        "file_berita_dan_pedoman": pedoman.file_berita_dan_pedoman
+        "thumbnail": file_name
     }
     return db_beritadanpedoman.put(pedoman)
 

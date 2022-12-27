@@ -6,10 +6,10 @@ class BeritaDanPedomanDB(BaseModel):
     judul_berita_dan_pedoman: str
     tanggal_berita_dan_pedoman: str
     isi_berita_dan_pedoman: str
-    file_berita_dan_pedoman: str
+    thumbnail: str
 
 class BeritaDanPedomanIn(BaseModel):
     judul_berita_dan_pedoman: str
     tanggal_berita_dan_pedoman: str
     isi_berita_dan_pedoman: str
-    file_berita_dan_pedoman: str
+    #thumbnail: str
