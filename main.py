@@ -18,7 +18,6 @@ from schemas.notifikasi import *
 from schemas.admin import *
 from schemas.beritadanpedoman import *
 from schemas.user import *
-from uuid import uuid4
 from utils import *
 from schemas.token import TokenSchema
 from deps import get_current_user
@@ -557,7 +556,7 @@ def proses_notifikasi(e = None):
                     db_notifikasiIn.update(notifikasi_update, all_itemsPanen[i]['key'])
 
     # This is for return the value that in db, all of values
-    res_out_notifikasi = db_notifikasiOut.fetch();
+    res_out_notifikasi = db_notifikasiOut.fetch()
     
     return res_out_notifikasi.items
 
