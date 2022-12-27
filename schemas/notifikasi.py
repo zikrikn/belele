@@ -1,16 +1,19 @@
 from pydantic import BaseModel
 from typing import Union
 from datetime import datetime, date, timedelta
+from schemas.const import Base
 
-class inputNotifikasi(BaseModel):
+class inputNotifikasi(Base):
     key: str #Notifikasi.ID
     tipe: str
-    waktuMasuk: Union[datetime, date, timedelta, str, None] = None
-    waktuKeluar: Union[datetime, date, timedelta, str, None] = None
-    waktuHabis: Union[datetime, date, timedelta, str, None] = None
+    waktu: Union[str, None] = None
+    waktu_masuk: Union[datetime, date, timedelta, str, None] = None
+    waktu_keluar: Union[datetime, date, timedelta, str, None] = None
+    waktu_habis: Union[datetime, date, timedelta, str, None] = None
 
-class outputNotifikasi(BaseModel):
+class outputNotifikasi(Base):
     key: str #Notifikasi.ID
     tipe: str
-    waktuKeluar: Union[datetime, date, timedelta, str, None] = None
+    waktu: Union[str, None] = None
+    waktu_keluar: Union[datetime, date, timedelta, str, None] = None
     messages: str

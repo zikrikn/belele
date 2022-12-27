@@ -1,29 +1,25 @@
 from pydantic import BaseModel
 from typing import Union
+from datetime import datetime, date, timedelta
+from schemas.const import Base
 
-class KolamDB(BaseModel):
+class KolamDB(Base):
     key: str
-    NamaKolam: str #Kolam.idr
-    JumlahLele: int
-    BeratLele: int
-    TanggalAwalTebarBibit: str
-    TakaranPangan: Union[float, None] = None
-    JumlahPakan: Union[float, None] = None
-    RestockPangan: Union[float, None] = None
+    nama_kolam: str #Kolam.idr
+    jumlah_lele: int
+    berat_lele: int
+    stock_pakan: Union[float, None] = None
+    waktu_tebar: Union[datetime, date, timedelta, str, None] = None
+    jumlah_pakan_harian: Union[float, None] = None
+    waktu_panen: Union[datetime, date, timedelta, str, None] = None
+    waktu_restock: Union[datetime, date, timedelta, str, None] = None
 
 class KolamIn(BaseModel):
-    NamaKolam: str #Kolam.idr
-    JumlahLele: int
-    BeratLele: int
-    TanggalAwalTebarBibit: str
-
-class RestockIn(BaseModel): #This Out
-    NamaKolam: str #Kolam.id
-    #BeratLele: int
-    JumlahPakan: int
+    nama_kolam: str #Kolam.idr
+    jumlah_lele: int
+    berat_lele: int
+    stock_pakan: Union[float, None] = None
 
 class RestockOut(BaseModel): #This Out
-    NamaKolam: str #Kolam.id
-    BeratLele: int
-    JumlahPakan: Union[float, None] = None
-    RestockPangan: Union[float, None] = None
+    nama_kolam: str #Kolam.id
+    waktu_restock: Union[datetime, date, timedelta, str, None] = None

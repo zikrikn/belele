@@ -2,9 +2,9 @@ from pydantic import BaseModel
 
 class PemberiPakanDB(BaseModel):
     key: str #PemberiPakanID
-    NamaPemberiPakan: str
-    PasswordPP: str
+    nama_pemberipakan: str
+    password_pemberipakan: str
 
 class PemberiPakanIn(BaseModel):
     key: str #PemberiPakanID
-    PasswordPP: str
+    password_pemberipakan: str

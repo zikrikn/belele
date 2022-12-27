@@ -8,3 +8,5 @@ datetime
 python-dateutil
 #time
 tortoise
+python-jose[cryptography]
+uuid
