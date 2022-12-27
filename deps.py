@@ -40,7 +40,6 @@ async def get_current_user(token: str = Depends(reusable_oauth)) -> UserOut:
             headers={"WWW-Authenticate": "Bearer"}
         )
         
-    # fetch_user = [user for user in static_db if user['user_id'] == token_data.sub]
     fetch_user = db_user.fetch({'key': str(token_data.sub)})
     try:
         user: Union[dict[str, Any], None] = fetch_user.items[0]
