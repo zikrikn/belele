@@ -98,7 +98,7 @@ tags=["berita_pedoman"]
 # Membuat auth untuk login dan signup
 # !!!Tambahannya signup admin dan delete akun!!!
 
-@auth_router.post("/signup", summary="Create new user", response_model=UserOut)
+@auth_router.post("/signup", summary="Create New User", response_model=UserOut)
 async def create_user(data: UserAuth):
     res = db_user.fetch([{'username': data.username}, {'email': data.email}])
     if len(res.items) != 0:
@@ -132,7 +132,7 @@ async def create_user(data: UserAuth):
             
     return validated_new_user.dict()
 
-@auth_router.post("/login", summary="Create access and refresh token", response_model=TokenSchema)
+@auth_router.post("/login", summary="Create Access and Refresh Token", response_model=TokenSchema)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     req_user = db_user.fetch({'username': form_data.username})
     if len(req_user.items) == 0:
@@ -166,7 +166,7 @@ async def get_profil(user: UserOut = Depends(get_current_user)):
     return req_profil.items[0]
 
 # Return a file from the storage Drive.
-@app.get("/cdn/{id}", tags=["CDN"])
+@app.get("/cdn/{id}", tags=["CDN"], summary="CDN")
 async def cdn(id: str):
     file = drive_photoprofile.get(id)
     if file is None:
@@ -174,7 +174,7 @@ async def cdn(id: str):
     headers = {"Cache-Control": "public, max-age=86400"}
     return StreamingResponse(file.iter_chunks(4096), media_type="image/jpg", headers=headers)
 
-@user_router.post("/upload_photoprofile", response_model=ProfileOut, summary="Upload photo profile")
+@user_router.post("/upload_photoprofile", response_model=ProfileOut, summary="Upload Photo Profile")
 async def upload_photo_profile(request: Request, img: UploadFile, user: UserOut = Depends(get_current_user)):
     req_user = db_user.fetch({'username': user.username})
 
@@ -238,7 +238,7 @@ def waktu_panen(jumlah_pakan_harian, lama_panen, waktu_panen_input):
     # Kembalikan waktu reminder panen dalam format YYYY-MM-DD HH:MM:SS
     return waktu_panen
 
-@kolam_router.post("/inputdata", summary="Mengukur Tarakan Lele")
+@kolam_router.post("/inputdata", summary="Mengukur Jumlah Pakan Harian Lele")
 def insert_hitung_jumlah_pakan(kolam: KolamIn, user: UserOut = Depends(get_current_user)):
     req_kolam_user = db_kolam.fetch({'nama_kolam': (kolam.nama_kolam).lower(), 'username': user.username})
 
@@ -318,7 +318,7 @@ def insert_hitung_jumlah_pakan(kolam: KolamIn, user: UserOut = Depends(get_curre
 
     return insert_kolam
 
-@kolam_router.post("/inputdatarestock", summary="Merestock pakan lele", response_model=RestockOut)
+@kolam_router.post("/inputdatarestock", summary="Waktu Restock Pakan Lele", response_model=RestockOut)
 def menghitung_restock(nama_kolam: str, user: UserOut = Depends(get_current_user)):
     req_restock = db_kolam.fetch({'nama_kolam': (nama_kolam).lower(), 'username': user.username})
 
@@ -695,8 +695,8 @@ async def post_thumbnail(beritadanpedoman_id: str, request: Request, img: Upload
     return req_beritapedoman.items[0]
 
 # Menghapus berita dan pedoman berdasarkan id
-@admin_router.delete("/delete/beritadanpedoman")
-def delete_berita_dan_pedoman(beritadanpedoman_id: str):
+@admin_router.delete("/delete/beritadanpedoman", summary="Delete Berita atau Pedoman")
+def delete_beritapedoman(beritadanpedoman_id: str):
     req_pedoman = db_beritadanpedoman.fetch({"key": beritadanpedoman_id})
 
     if req_pedoman.items == []:
