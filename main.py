@@ -1,39 +1,32 @@
+# FastAPI Library
 from fastapi import FastAPI, HTTPException, APIRouter, Depends, status, UploadFile, Request
-# , Security
-from fastapi.middleware.cors import CORSMiddleware # Untuk CORS Middleware beda tempat. Pakai Fetch & JS untuk implementasinya OR using NEXT.js
-from fastapi.responses import RedirectResponse, Response, StreamingResponse
-from pydantic import ValidationError
-from datetime import date, datetime, time
-import time as tm
-from dateutil.relativedelta import relativedelta
-
-from fastapi.security import OAuth2PasswordRequestForm
-
-# #For deta cron
-# from deta import App
-
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse, StreamingResponse
 # Schemas
 from schemas.kolam import *
 from schemas.notifikasi import *
 from schemas.beritadanpedoman import *
 from schemas.user import *
+# Security
+from fastapi.security import OAuth2PasswordRequestForm
 from utils import *
 from schemas.token import TokenSchema
 from deps import get_current_user
-
-# Connecting to database
+# Connecting to Database
 from db import *
-
-# Connecting to drive
+# Connecting to Drive
 from drive import *
-
 # Unicorn
 import uvicorn
-
-
+# Others Libary
+from pydantic import ValidationError
+from datetime import date, datetime, time
+from dateutil.relativedelta import relativedelta
+import time as tm
 import random
 import string
-
+# # Deta Cron
+# from deta import App
 
 '''
 #Routers
@@ -123,6 +116,7 @@ async def create_user(data: UserAuth):
         'email': data.email,
         'username': data.username,
         'hashed_password': get_hashed_password(data.password),
+        'photoprofile': None
     }
 
     try:
@@ -158,9 +152,16 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
         'refresh_token': create_refresh_token(req_user['key'])
     }
 
-@user_router.get("/me", summary="Get logged in user detail", response_model=ProfileOut)
-async def get_me(user: ProfileOut = Depends(get_current_user)):
-    return user
+@user_router.get("/profile", response_model=ProfileOut)
+async def get_profil(user: UserOut = Depends(get_current_user)):
+    req_profil = db_user.fetch({'username': user.username})
+    if len(req_profil.items) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Profile not found"
+        )
+    
+    return req_profil.items[0]
     
 # Generate a random string of ASCII characters.
 def generate_id(length: int = 8) -> str:
@@ -615,42 +616,75 @@ def get_notifikasi(user: UserOut = Depends(get_current_user)):
 
 #admin - berita
 @admin_router.post("/post/berita", response_model=BeritaDanPedomanDB)
-async def post_berita(berita: BeritaDanPedomanIn, request: Request, img: UploadFile):
-
-    id = generate_id()
-    file_content = await img.read()
-    file_name = f"{id}_{berita.judul_berita_dan_pedoman}.jpg"
-    drive_thumbnail.put(file_name, file_content)
+def post_berita(berita: BeritaDanPedomanIn):
 
     berita = {
         "key": str(int(generateKey(tm.time() * 10000))),
         "tipe": "berita",
         "judul_berita_dan_pedoman": berita.judul_berita_dan_pedoman,
-        "tanggal_berita_dan_pedoman": berita.tanggal_berita_dan_pedoman,
+        "tanggal_berita_dan_pedoman": datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
         "isi_berita_dan_pedoman": berita.isi_berita_dan_pedoman,
-        "thumbnail": f"{request.base_url}cdn/{file_name}"
+        "thumbnail": None
     }
 
-    return db_beritadanpedoman.put(berita)
+    try:
+        validated_new_berita = BeritaDanPedomanDB(**berita)
+        db_beritadanpedoman.put(validated_new_berita.dict())
+    except ValidationError:
+        raise HTTPException(
+            status_code=404,
+            detail="Invalid input value"
+        )
+
+    return berita
 
 #admin - pedoman
 @admin_router.post("/post/pedoman", response_model=BeritaDanPedomanDB)
-async def post_Pedoman(pedoman: BeritaDanPedomanIn, request: Request, img: UploadFile):
-
-    id = generate_id()
-    file_content = await img.read()
-    file_name = f"{id}_{pedoman.judul_berita_dan_pedoman}.jpg"
-    drive_thumbnail.put(file_name, file_content)
+def post_pedoman(pedoman: BeritaDanPedomanIn):
 
     pedoman = {
-        "key": str(int(generateKey(tm.time() * 10000))),
-        "tipe": "pedoman",
-        "judul_berita_dan_pedoman": pedoman.judul_berita_dan_pedoman,
-        "tanggal_berita_dan_pedoman": pedoman.tanggal_berita_dan_pedoman,
-        "isi_berita_dan_pedoman": pedoman.isi_berita_dan_pedoman,
+        'key': str(int(generateKey(tm.time() * 10000))),
+        'tipe': "pedoman",
+        'judul_berita_dan_pedoman': pedoman.judul_berita_dan_pedoman,
+        'tanggal_berita_dan_pedoman': datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+        'isi_berita_dan_pedoman': pedoman.isi_berita_dan_pedoman,
+        'thumbnail': None
+    }
+
+    try:
+        validated_new_pedoman = BeritaDanPedomanDB(**pedoman)
+        db_beritadanpedoman.put(validated_new_pedoman.dict())
+    except ValidationError:
+        raise HTTPException(
+            status_code=404,
+            detail="Invalid input value"
+        )
+
+    return pedoman
+
+@admin_router.post("/post/beritapedoman/thumbnail", response_model=BeritaDanPedomanDB)
+def post_thumbnail(beritapedomanID: str, request: Request, img: UploadFile):
+    req_beritapedoman = db_beritadanpedoman.fetch({'key': beritapedomanID})
+
+    if req_beritapedoman.items == []:
+        raise HTTPException(
+            status_code=404,
+            detail="Berita not found"
+        )
+    
+    id = generate_id()
+    file_content = img.read()
+    file_name = f"{id}_{req_beritapedoman.items[0]['judul_berita_dan_pedoman']}.jpg"
+    drive_thumbnail.put(file_name, file_content)
+
+    thumbnail_update = {
         "thumbnail": f"{request.base_url}cdn/{file_name}"
     }
-    return db_beritadanpedoman.put(pedoman)
+
+    req_beritapedoman.items[0]['thumbnail'] = f"{request.base_url}cdn/{file_name}"
+    db_beritadanpedoman.update(thumbnail_update, req_beritapedoman.items[0]['key'])
+
+    return req_beritapedoman.items[0]
 
 #admin - delete berita //nanti pakai key-nya untuk menghapus
 @admin_router.delete("/delete/berita")

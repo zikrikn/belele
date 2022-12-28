@@ -1,15 +1,16 @@
 from pydantic import BaseModel
+from typing import Union
 
 class BeritaDanPedomanDB(BaseModel):
-    key: str #ID dari agar terupdate dari yang paling baru
-    tipe: str #Tipe-nya Berita atau Pedoman
+    key: str 
+    tipe: str
     judul_berita_dan_pedoman: str
     tanggal_berita_dan_pedoman: str
     isi_berita_dan_pedoman: str
-    thumbnail: str
+    thumbnail: Union[str, None] = None
 
 class BeritaDanPedomanIn(BaseModel):
     judul_berita_dan_pedoman: str
-    tanggal_berita_dan_pedoman: str
+    #tanggal_berita_dan_pedoman: str
     isi_berita_dan_pedoman: str
     #thumbnail: str
