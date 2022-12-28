@@ -1,7 +1,7 @@
-from fastapi import FastAPI, HTTPException, APIRouter, Depends, status, UploadFile
+from fastapi import FastAPI, HTTPException, APIRouter, Depends, status, UploadFile, Request
 # , Security
 from fastapi.middleware.cors import CORSMiddleware # Untuk CORS Middleware beda tempat. Pakai Fetch & JS untuk implementasinya OR using NEXT.js
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response, StreamingResponse
 from pydantic import ValidationError
 from datetime import date, datetime, time
 import time as tm
@@ -29,6 +29,10 @@ from drive import *
 
 # Unicorn
 import uvicorn
+
+
+import random
+import string
 
 
 '''
@@ -157,9 +161,22 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 @user_router.get("/me", summary="Get logged in user detail", response_model=ProfileOut)
 async def get_me(user: ProfileOut = Depends(get_current_user)):
     return user
+    
+# Generate a random string of ASCII characters.
+def generate_id(length: int = 8) -> str:
+    return "".join(random.choices(string.ascii_lowercase, k=length))
+
+# Return a file from the storage Drive.
+@app.get("/cdn/{id}", tags=["CDN"])
+async def cdn(id: str):
+    file = drive_photoprofile.get(id)
+    if file is None:
+        raise HTTPException(status_code=404)
+    headers = {"Cache-Control": "public, max-age=86400"}
+    return StreamingResponse(file.iter_chunks(4096), media_type="image/jpg", headers=headers)
 
 @user_router.post("/upload_photoprofile", response_model=ProfileOut, summary="Upload photo profile")
-async def upload_photo_profile(img: UploadFile, user: UserOut = Depends(get_current_user)):
+async def upload_photo_profile(request: Request, img: UploadFile, user: UserOut = Depends(get_current_user)):
     req_user = db_user.fetch({'username': user.username})
 
     if len(req_user.items) == 0:
@@ -167,16 +184,18 @@ async def upload_photo_profile(img: UploadFile, user: UserOut = Depends(get_curr
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Data not exist"
         )
-    
+
+    id = generate_id()
     file_content = await img.read()
-    filename = f"photoprofile_{user.username}.jpg"
-    drive_photoprofile.put(filename, file_content)
+    file_name = f"{id}_{user.username}.jpg"
+    drive_photoprofile.put(file_name, file_content)
     
     update = {
-        'photoprofile': filename
+        'photoprofile': f"{request.base_url}cdn/{file_name}"
     }
+
     update_photoprofile = req_user.items[0]
-    update_photoprofile['photoprofile'] = filename
+    update_photoprofile['photoprofile'] = f"{request.base_url}cdn/{file_name}"
     db_user.update(update, update_photoprofile['key'])
     
     return update_photoprofile
@@ -580,7 +599,7 @@ def proses_notifikasi(e = None):
                     }
                     db_notifikasiIn.update(notifikasi_update, all_itemsPanen[i]['key'])
 
-    # This is for return the value that in db, all of values
+    # This is for return the value that in db, all of values, and it's just called it rn so it must be the recent one
     res_out_notifikasi = db_notifikasiOut.fetch()
     
     return res_out_notifikasi.items
@@ -596,10 +615,11 @@ def get_notifikasi(user: UserOut = Depends(get_current_user)):
 
 #admin - berita
 @admin_router.post("/post/berita", response_model=BeritaDanPedomanDB)
-async def post_berita(berita: BeritaDanPedomanIn, img: UploadFile):
+async def post_berita(berita: BeritaDanPedomanIn, request: Request, img: UploadFile):
 
+    id = generate_id()
     file_content = await img.read()
-    file_name = f"{berita.judul_berita_dan_pedoman}.jpg"
+    file_name = f"{id}_{berita.judul_berita_dan_pedoman}.jpg"
     drive_thumbnail.put(file_name, file_content)
 
     berita = {
@@ -608,17 +628,18 @@ async def post_berita(berita: BeritaDanPedomanIn, img: UploadFile):
         "judul_berita_dan_pedoman": berita.judul_berita_dan_pedoman,
         "tanggal_berita_dan_pedoman": berita.tanggal_berita_dan_pedoman,
         "isi_berita_dan_pedoman": berita.isi_berita_dan_pedoman,
-        "thumbnail": file_name
+        "thumbnail": f"{request.base_url}cdn/{file_name}"
     }
 
     return db_beritadanpedoman.put(berita)
 
 #admin - pedoman
 @admin_router.post("/post/pedoman", response_model=BeritaDanPedomanDB)
-async def post_Pedoman(pedoman: BeritaDanPedomanIn, img: UploadFile):
+async def post_Pedoman(pedoman: BeritaDanPedomanIn, request: Request, img: UploadFile):
 
+    id = generate_id()
     file_content = await img.read()
-    file_name = f"{pedoman.judul_berita_dan_pedoman}.jpg"
+    file_name = f"{id}_{pedoman.judul_berita_dan_pedoman}.jpg"
     drive_thumbnail.put(file_name, file_content)
 
     pedoman = {
@@ -627,7 +648,7 @@ async def post_Pedoman(pedoman: BeritaDanPedomanIn, img: UploadFile):
         "judul_berita_dan_pedoman": pedoman.judul_berita_dan_pedoman,
         "tanggal_berita_dan_pedoman": pedoman.tanggal_berita_dan_pedoman,
         "isi_berita_dan_pedoman": pedoman.isi_berita_dan_pedoman,
-        "thumbnail": file_name
+        "thumbnail": f"{request.base_url}cdn/{file_name}"
     }
     return db_beritadanpedoman.put(pedoman)
 
