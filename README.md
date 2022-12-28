@@ -1,1 +1,1 @@
-REST Api for IMPAL
+REST API for IMPAL
