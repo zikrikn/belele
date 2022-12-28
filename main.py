@@ -27,21 +27,21 @@ import random
 import string
 import pytz
 
-# # Deta Cron
-# from deta import App
+# Deta Cron
+from deta import App
 
-# app = App(FastAPI(
-#     title="LeMES",
-#     version="1.0",
-#     prefix="/api"
-# ))
-
-
-app = FastAPI(
+app = App(FastAPI(
     title="LeMES",
     version="1.0",
     prefix="/api"
-)
+))
+
+
+# app = FastAPI(
+#     title="LeMES",
+#     version="1.0",
+#     prefix="/api"
+# )
 
 # Menentukan timezone Indonesia Barat
 tz = pytz.timezone('Asia/Jakarta')
@@ -415,7 +415,7 @@ def search(nama_kolam: str, user: UserOut = Depends(get_current_user)):
 ''''''''''''
 
 # Cron Job Deta dengan Trigger 1 menit sekali
-# @app.lib.cron()
+@app.lib.cron()
 @app.get("/proses_notifikasi", summary="Notifikasi", include_in_schema=False)
 def proses_notifikasi(e = None):
     inT1 = time(8, 00, 00)
