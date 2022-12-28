@@ -696,7 +696,7 @@ async def post_thumbnail(beritadanpedoman_id: str, request: Request, img: Upload
 
 # Menghapus berita dan pedoman berdasarkan id
 @admin_router.delete("/delete/beritadanpedoman")
-def delete_pedomanklik(beritadanpedoman_id: str):
+def delete_berita_dan_pedoman(beritadanpedoman_id: str):
     req_pedoman = db_beritadanpedoman.fetch({"key": beritadanpedoman_id})
 
     if req_pedoman.items == []:
