@@ -20,20 +20,15 @@ from drive import *
 import uvicorn
 # Others Libary
 from pydantic import ValidationError
-from datetime import date, datetime, time
+from datetime import datetime, time
 from dateutil.relativedelta import relativedelta
 import time as tm
 import random
 import string
+import pytz
+
 # # Deta Cron
 # from deta import App
-
-'''
-#Routers
-from routers.admin import admin_router
-from routers.both import both_router
-from routers.user import user_router
-'''
 
 # app = App(FastAPI(
 #     title="LeMES",
@@ -48,53 +43,60 @@ app = FastAPI(
     prefix="/api"
 )
 
-#fungsi untuk generate key agar lastest record muncul paling atas
+# Menentukan timezone Indonesia Barat
+tz = pytz.timezone('Asia/Jakarta')
+
+# Generate key to make the lastest record on the top.
 def generateKey(timestap):
     bigNumber = 8.64e15
     return (bigNumber - timestap)
+
+# Generate a random string of ASCII characters.
+def generate_id(length: int = 8) -> str:
+    return "".join(random.choices(string.ascii_lowercase, k=length))
 
 @app.get("/", include_in_schema=False)
 def redirect_docs():
     return RedirectResponse("/docs")
 
-#Untuk keamanan
+# Untuk keamanan
 auth_router = APIRouter(
 prefix="/auth",
 tags=["auth"]
 )
 
-#Khusus user biasa
+# Khusus user biasa
 user_router = APIRouter(
 prefix="/user",
 tags=["user"],
 dependencies=[Depends(get_current_user)]
 )
 
-#Khusus kolam karena banyak hal yang diinput dari user terkait dengan kolam
+# Khusus kolam karena banyak hal yang diinput dari user terkait dengan kolam
 kolam_router = APIRouter(
 prefix="/kolam",
 tags=["kolam"],
 dependencies=[Depends(get_current_user)]
 )
 
-#Khusus admin
+# Khusus admin
 admin_router = APIRouter(
 prefix="/admin", 
 tags=["admin"]
 )
 
-#Khusus untuk berita termasuk memasukan berita dan menampilkan berita
+# Khusus untuk berita termasuk memasukan berita dan menampilkan berita
 beritapedoman_router = APIRouter(
 prefix="/beritapedoman",
 tags=["berita_pedoman"]
 )
 
 ''''''''''''
-#!! AUTH !!
+# !! AUTH !!
 ''''''''''''
 
-#Membuat auth untuk login dan signup
-#!!!Tambahannya signup admin dan delete akun!!!
+# Membuat auth untuk login dan signup
+# !!!Tambahannya signup admin dan delete akun!!!
 
 @auth_router.post("/signup", summary="Create new user", response_model=UserOut)
 async def create_user(data: UserAuth):
@@ -162,10 +164,6 @@ async def get_profil(user: UserOut = Depends(get_current_user)):
         )
     
     return req_profil.items[0]
-    
-# Generate a random string of ASCII characters.
-def generate_id(length: int = 8) -> str:
-    return "".join(random.choices(string.ascii_lowercase, k=length))
 
 # Return a file from the storage Drive.
 @app.get("/cdn/{id}", tags=["CDN"])
@@ -201,15 +199,11 @@ async def upload_photo_profile(request: Request, img: UploadFile, user: UserOut 
     
     return update_photoprofile
 
-# PR sekarang adalah gambar profile, gambar berita, dan pedoman
-# untuk gambar profile nanti dulu
-# untuk gambar berita dan pedoman nanti dulu
-
 ''''''''''''
 #!! KOLAM !!
 ''''''''''''
 
-# Definisikan fungsi untuk menghitung jumlah pakan harian lele
+# Fungsi untuk menghitung jumlah pakan harian lele
 def hitung_jumlah_pakan(jumlah_lele, berat_lele, kandungan_energi, faktor_konversi, stok_pakan):
     # Hitung berat total lele
     berat_total_lele = jumlah_lele * berat_lele
@@ -227,14 +221,14 @@ def waktu_reminder_restock(stok_pakan, jumlah_pakan_harian):
     sisa_stok = stok_pakan - jumlah_pakan_harian
     # Jika sisa stok kurang dari 0, maka waktu reminder restock adalah sekarang
     if sisa_stok < 0:
-        return datetime.now()
+        return datetime.now(tz).date()
     # Jika sisa stok lebih dari 0, hitung berapa hari lagi stok pakan akan habis
     # dan tambahkan waktu sekarang untuk mendapatkan waktu reminder restock
     else:
         hari_sisa = sisa_stok / jumlah_pakan_harian
-        return (datetime.now() + timedelta(days=hari_sisa))
+        return (datetime.now(tz).date() + timedelta(days=hari_sisa))
 
-# Waktu reminder restock itu beda dengan panen, kalau restock its all about pakan, kalau panen its all about waktu panen
+# Waktu reminder restock itu beda dengan panen
 # Definisikan fungsi untuk menentukan waktu reminder panen
 def waktu_panen(jumlah_pakan_harian, lama_panen, waktu_panen_input):
     # Hitung jumlah hari yang diperlukan untuk panen
@@ -244,7 +238,6 @@ def waktu_panen(jumlah_pakan_harian, lama_panen, waktu_panen_input):
     # Kembalikan waktu reminder panen dalam format YYYY-MM-DD HH:MM:SS
     return waktu_panen
 
-#takaranlele
 @kolam_router.post("/inputdata", summary="Mengukur Tarakan Lele")
 def insert_hitung_jumlah_pakan(kolam: KolamIn, user: UserOut = Depends(get_current_user)):
     req_kolam_user = db_kolam.fetch({'nama_kolam': (kolam.nama_kolam).lower(), 'username': user.username})
@@ -255,7 +248,7 @@ def insert_hitung_jumlah_pakan(kolam: KolamIn, user: UserOut = Depends(get_curre
             detail="Data already exist"
         )
     
-    waktu_panen_result = waktu_panen(hitung_jumlah_pakan(kolam.jumlah_lele, kolam.berat_lele, 3.5, 0.5, kolam.stock_pakan), 60, (date.today() + relativedelta(months=+2)))
+    waktu_panen_result = waktu_panen(hitung_jumlah_pakan(kolam.jumlah_lele, kolam.berat_lele, 3.5, 0.5, kolam.stock_pakan), 60, (datetime.now(tz).date()+ relativedelta(months=+2)))
 
     insert_kolam = {
         "username": user.username,
@@ -264,7 +257,7 @@ def insert_hitung_jumlah_pakan(kolam: KolamIn, user: UserOut = Depends(get_curre
         "jumlah_lele": kolam.jumlah_lele,
         "berat_lele": kolam.berat_lele,
         "stock_pakan": kolam.stock_pakan,
-        "waktu_tebar": datetime.now().strftime('%m/%d/%Y, %H:%M:%S'),
+        "waktu_tebar": datetime.now(tz).astimezone(tz).strftime('%m/%d/%Y, %H:%M:%S'),
         "jumlah_pakan_harian": hitung_jumlah_pakan(kolam.jumlah_lele, kolam.berat_lele, 3.5, 0.5, kolam.stock_pakan),
         "waktu_panen": waktu_panen_result.strftime("%m/%d/%Y, %H:%M:%S"),
         "waktu_restock": None
@@ -285,11 +278,12 @@ def insert_hitung_jumlah_pakan(kolam: KolamIn, user: UserOut = Depends(get_curre
     inputNotifikasiHarian = {
         "username": user.username,
         "key": str(int(generateKey(tm.time() * 10000))),
+        "nama_kolam": (kolam.nama_kolam).lower(),
         "tipe": "Harian",
         "waktu" : "Pagi",
-        "waktu_masuk": date.today().strftime("%m/%d/%Y, %H:%M:%S"),
-        "waktu_keluar": (date.today() + relativedelta(days=+1)).strftime("%m/%d/%Y, %H:%M:%S"),
-        "waktu_habis": (date.today() + relativedelta(days=+30)).strftime("%m/%d/%Y, %H:%M:%S")
+        "waktu_masuk": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
+        "waktu_keluar": (datetime.now(tz).date() + relativedelta(days=+1)).strftime("%m/%d/%Y, %H:%M:%S"),
+        "waktu_habis": (datetime.now(tz).date() + relativedelta(days=+30)).strftime("%m/%d/%Y, %H:%M:%S")
     }
 
     try:
@@ -305,9 +299,10 @@ def insert_hitung_jumlah_pakan(kolam: KolamIn, user: UserOut = Depends(get_curre
     inputNotifikasiPanen = {
         "username": user.username,
         "key": str(int(generateKey(tm.time() * 10000))),
+        "nama_kolam": (kolam.nama_kolam).lower(),
         "tipe": "Panen",
         "waktu": "H-2",
-        "waktu_masuk": date.today().strftime("%m/%d/%Y, %H:%M:%S"),
+        "waktu_masuk": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
         "waktu_keluar": waktu_panen_result.strftime("%m/%d/%Y, %H:%M:%S"),
         "waktu_habis": (waktu_panen_result + relativedelta(months=+2, days=+6)).strftime("%m/%d/%Y, %H:%M:%S")
     }
@@ -332,6 +327,12 @@ def menghitung_restock(nama_kolam: str, user: UserOut = Depends(get_current_user
             status_code=400,
             detail="Data not exist"
         )
+    
+    if req_restock.items[0]['waktu_restock'] is not None:
+        raise HTTPException(
+            status_code=400,
+            detail="Data already exist"
+        )
 
     assign_restock = req_restock.items[0]
     stock_pakan_restock = assign_restock['stock_pakan']
@@ -347,13 +348,13 @@ def menghitung_restock(nama_kolam: str, user: UserOut = Depends(get_current_user
 
     # Ini untuk notifikasi restock
 
-    # Kayanya sih buat beberapa kondisi, most likely it would be six conditions with different ones
-
     inputNotifikasiRestock = {
         "username": user.username,
         "key": str(int(generateKey(tm.time() * 10000))),
+        "nama_kolam": (nama_kolam).lower(),
         "tipe": "Restock",
-        "waktu_masuk" : date.today().strftime("%m/%d/%Y, %H:%M:%S"),
+        "waktu" : "H-1",
+        "waktu_masuk" : datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
         "waktu_keluar" : waktu_reminder_restock_result.strftime("%m/%d/%Y, %H:%M:%S"),
         "waktu_habis" : (waktu_reminder_restock_result + relativedelta(days=+2)).strftime("%m/%d/%Y, %H:%M:%S")
     }
@@ -369,7 +370,7 @@ def menghitung_restock(nama_kolam: str, user: UserOut = Depends(get_current_user
 
     return assign_restock
 
-# get info all kolam
+# Mendapatkan Info Kolam
 @kolam_router.get("/info/all", summary="Melihat Info Kolam")
 def info_kolam(user: UserOut = Depends(get_current_user)):
     res_kolam = db_kolam.fetch({'username': user.username})
@@ -383,15 +384,21 @@ def info_kolam(user: UserOut = Depends(get_current_user)):
 
     return all_items
 
-# delete kolam, tergantung nama kolamnya
+# Delete Info Kolam
 @kolam_router.delete("/delete/", summary="Menghapus Kolam")
 def delete_kolam(nama_kolam: str, user: UserOut = Depends(get_current_user)):
     req_kolam = db_kolam.fetch({'nama_kolam': (nama_kolam).lower(), 'username': user.username})
+
     db_kolam.delete(req_kolam.items[0]['key'])
+
+    req_notifikasi = db_notifikasiIn.fetch({'nama_kolam': (nama_kolam).lower(), 'username': user.username})
+
+    for i in range(0, len(req_notifikasi.items)):
+        db_notifikasiIn.delete(req_notifikasi.items[i]['key'])
 
     return {'message': 'success', 'nama_kolam': nama_kolam}
 
-# search
+# Search Info Kolam
 @kolam_router.get("/info/{nama_kolam}", summary="Mencari Kolam")
 def search(nama_kolam: str, user: UserOut = Depends(get_current_user)):
     req_search = db_kolam.fetch({'nama_kolam': (nama_kolam).lower(), 'username': user.username})
@@ -407,7 +414,7 @@ def search(nama_kolam: str, user: UserOut = Depends(get_current_user)):
 #!! USER !!
 ''''''''''''
 
-#notifikasi //buat trigger atau gak refresh setiap berapa menit sekali //atau tentukan waktu untuk trigger
+# Cron Job Deta dengan Trigger 1 menit sekali
 # @app.lib.cron()
 @app.get("/proses_notifikasi", summary="Notifikasi", include_in_schema=False)
 def proses_notifikasi(e = None):
@@ -419,18 +426,13 @@ def proses_notifikasi(e = None):
     outT2 = time(13, 00, 00)
     outT3 = time(18, 00, 00)
 
-    inPagi = datetime.combine(date.today(), inT1)
-    inSiang = datetime.combine(date.today(), inT2)
-    inSore = datetime.combine(date.today(), inT3)
-    outPagi = datetime.combine(date.today(), outT1)
-    outSiang = datetime.combine(date.today(), outT2)
-    outSore = datetime.combine(date.today(), outT3)
+    inPagi = datetime.combine(datetime.now(tz).date(), inT1).astimezone(tz)
+    inSiang = datetime.combine(datetime.now(tz).date(), inT2).astimezone(tz)
+    inSore = datetime.combine(datetime.now(tz).date(), inT3).astimezone(tz)
+    outPagi = datetime.combine(datetime.now(tz).date(), outT1).astimezone(tz)
+    outSiang = datetime.combine(datetime.now(tz).date(), outT2).astimezone(tz)
+    outSore = datetime.combine(datetime.now(tz).date(), outT3).astimezone(tz)
 
-    # we have to make new row first ig
-    # so this is just put the data to the database
-
-    # this is for panen
-    # bisa diakalin lewat kondisi ini jadi for-nya 
     notif_resHarian = db_notifikasiIn.fetch({"tipe":"Harian"})
     all_itemsHarian = notif_resHarian.items
     
@@ -440,20 +442,19 @@ def proses_notifikasi(e = None):
     notif_resRestock = db_notifikasiIn.fetch({"tipe":"Restock"})
     all_itemsRestock = notif_resRestock.items
 
-    # filter dari notifikasiOut dan masuk key dari notifikasiIn ke notifikasiOut dengan variabel keyIn, nah terus jika sama jangan dimasukin lagi
-    # dan mungkin bisa juga ditambah kondisi pagi, siang, sore
 
     for i in range(0, len(all_itemsHarian)):
         # Ini untuk notifikasi harian
-        if (date.today() >= datetime.strptime((all_itemsHarian[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() 
-        and date.today() <= datetime.strptime((all_itemsHarian[i]['waktu_habis']), "%m/%d/%Y, %H:%M:%S").date()):
-            if (datetime.now() >= inPagi and datetime.now() <= outPagi and all_itemsHarian[i]['waktu'] == "Pagi"):
+        if (datetime.now(tz).date() >= datetime.strptime((all_itemsHarian[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() 
+        and datetime.now(tz).date() <= datetime.strptime((all_itemsHarian[i]['waktu_habis']), "%m/%d/%Y, %H:%M:%S").date()):
+            if (datetime.now(tz) >= inPagi and datetime.now(tz) <= outPagi and all_itemsHarian[i]['waktu'] == "Pagi"):
                 outputNotifikasiHarian = {
-                    "key": str(int(generateKey(tm.time() * 10000))),
                     "username": all_itemsHarian[i]['username'],
+                    "key": str(int(generateKey(tm.time() * 10000))),
+                    "nama_kolam": all_itemsHarian[i]['nama_kolam'],
                     "tipe": "Harian",
                     "waktu": "Pagi",
-                    "waktu_keluar" : datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                    "waktu_keluar" : datetime.now(tz).strftime("%m/%d/%Y, %H:%M:%S"),
                     "messages" : "Reminder untuk memberi pakan pada Pagi hari!"
                 }
                 db_notifikasiOut.put(outputNotifikasiHarian)
@@ -461,13 +462,14 @@ def proses_notifikasi(e = None):
                     "waktu": "Siang"
                 }
                 db_notifikasiIn.update(notifikasi_update, all_itemsHarian[i]['key'])
-            elif (datetime.now() >= inSiang and datetime.now() <= outSiang and all_itemsHarian[i]['waktu'] == "Siang"):
+            elif (datetime.now(tz) >= inSiang and datetime.now(tz) <= outSiang and all_itemsHarian[i]['waktu'] == "Siang"):
                 outputNotifikasiHarian = {
                     "username": all_itemsHarian[i]['username'],
                     "key": str(int(generateKey(tm.time() * 10000))),
+                    "nama_kolam": all_itemsHarian[i]['nama_kolam'],
                     "tipe": "Harian",
                     "waktu": "Siang",
-                    "waktu_keluar" : datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                    "waktu_keluar" : datetime.now(tz).strftime("%m/%d/%Y, %H:%M:%S"),
                     "messages" : "Reminder untuk memberi pakan pada Siang hari!"
                 }
                 db_notifikasiOut.put(outputNotifikasiHarian)
@@ -475,13 +477,14 @@ def proses_notifikasi(e = None):
                     "waktu": "Sore"
                 }
                 db_notifikasiIn.update(notifikasi_update, all_itemsHarian[i]['key'])
-            elif (datetime.now() >= inSore and datetime.now() <= outSore and all_itemsHarian[i]['waktu'] == "Sore"):
+            elif (datetime.now(tz) >= inSore and datetime.now(tz) <= outSore and all_itemsHarian[i]['waktu'] == "Sore"):
                 outputNotifikasiHarian = {
                     "username": all_itemsHarian[i]['username'],
                     "key": str(int(generateKey(tm.time() * 10000))),
+                    "nama_kolam": all_itemsHarian[i]['nama_kolam'],
                     "tipe": "Harian",
                     "waktu": "Sore",
-                    "waktu_keluar" : datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                    "waktu_keluar" : datetime.now(tz).strftime("%m/%d/%Y, %H:%M:%S"),
                     "messages" : "Reminder untuk memberi pakan pada Sore hari!"
                 }
                 db_notifikasiOut.put(outputNotifikasiHarian)
@@ -489,19 +492,19 @@ def proses_notifikasi(e = None):
                     "waktu": "Pagi"
                 }
                 db_notifikasiIn.update(notifikasi_update, all_itemsHarian[i]['key'])
-            elif (datetime.now() >= outSore):
+            elif (datetime.now(tz) >= outSore):
                 notifikasi_nitip = all_itemsHarian[i]
                 db_notifikasiIn.delete(all_itemsHarian[i]['key'])
 
-                # Ini untuk notifikasi sehari 3 kali
-                # Bakal ada user tapi entah di mana
+                # Ini last point sehari dan akan diinput ke notifikasi harian besok dengan update waktu
                 inputNotifikasiHarian = {
                     "username": notifikasi_nitip['username'],
                     "key": str(int(generateKey(tm.time() * 10000))),
+                    "nama_kolam": notifikasi_nitip['nama_kolam'],
                     "tipe": "Harian",
                     "waktu": notifikasi_nitip['waktu'],
                     "waktu_masuk": notifikasi_nitip['waktu_masuk'],
-                    "waktu_keluar": (date.today() + relativedelta(days=+1)).strftime("%m/%d/%Y, %H:%M:%S"),
+                    "waktu_keluar": (datetime.now(tz).date() + relativedelta(days=+1)).strftime("%m/%d/%Y, %H:%M:%S"),
                     "waktu_habis": notifikasi_nitip['waktu_habis'],
                 }
 
@@ -514,19 +517,20 @@ def proses_notifikasi(e = None):
                         detail="Invalid input value"
                     )
 
-    # untuk yang di bawah malah better kalau dilock
+    # Yang di bawah lebih baik jika dilock
     for i in range(0, len(all_itemsPanen)):        
         # Ini untuk notifkasi panen
-        if (date.today() >= datetime.strptime((all_itemsPanen[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() 
-        and date.today() <= datetime.strptime((all_itemsPanen[i]['waktu_habis']), "%m/%d/%Y, %H:%M:%S").date()):
-            if (date.today() == datetime.strptime((all_itemsPanen[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date()) :
-                if (datetime.now() >= datetime.combine(date.today(), time(10, 1, 00)) and datetime.now() <= datetime.combine(date.today(), time(11, 2, 00))) and all_itemsPanen[i]['waktu'] == "H-2":
+        if (datetime.now(tz).date() >= datetime.strptime((all_itemsPanen[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() 
+        and datetime.now(tz).date() <= datetime.strptime((all_itemsPanen[i]['waktu_habis']), "%m/%d/%Y, %H:%M:%S").date()):
+            if (datetime.now(tz).date() == datetime.strptime((all_itemsPanen[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date()) :
+                if (datetime.now(tz) >= datetime.combine(datetime.now(tz).date(), time(10, 1, 00)).astimezone(tz) and datetime.now(tz) <= datetime.combine(datetime.now(tz).date(), time(11, 2, 00)).astimezone(tz) and all_itemsPanen[i]['waktu'] == "H-2"):
                     outputNotifikasiPanen = {
                         "username": all_itemsPanen[i]['username'],
                         "key": str(int(generateKey(tm.time() * 10000))),
+                        "nama_kolam": all_itemsPanen[i]['nama_kolam'],
                         "tipe": "Panen",
                         "waktu": "H-2",
-                        "waktu_keluar" : datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                        "waktu_keluar" : datetime.now(tz).strftime("%m/%d/%Y, %H:%M:%S"),
                         "messages" : "Reminder H-2 Sebelum Panen!"
                     }
                     db_notifikasiOut.put(outputNotifikasiPanen)
@@ -534,14 +538,15 @@ def proses_notifikasi(e = None):
                         "waktu": "H-1"
                     }
                     db_notifikasiIn.update(notifikasi_update, all_itemsPanen[i]['key'])
-            elif (date.today() == datetime.strptime((all_itemsPanen[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() + relativedelta(days=+1)):
-                if (datetime.now() >= datetime.combine(date.today(), time(10, 1, 00)) and datetime.now() <= datetime.combine(date.today(), time(11, 2, 00))) and all_itemsPanen[i]['waktu'] == "H-1":
+            elif (datetime.now(tz).date() == datetime.strptime((all_itemsPanen[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() + relativedelta(days=+1)):
+                if (datetime.now(tz) >= datetime.combine(datetime.now(tz).date(), time(10, 1, 00)).astimezone(tz) and datetime.now(tz) <= datetime.combine(datetime.now(tz).date(), time(11, 2, 00)).astimezone(tz) and all_itemsPanen[i]['waktu'] == "H-1"):
                     outputNotifikasiPanen = {
                         "username": all_itemsPanen[i]['username'],
                         "key": str(int(generateKey(tm.time() * 10000))),
+                        "nama_kolam": all_itemsPanen[i]['nama_kolam'],
                         "tipe": "Panen",
                         "waktu": "H-1",
-                        "waktu_keluar" : datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                        "waktu_keluar" : datetime.now(tz).strftime("%m/%d/%Y, %H:%M:%S"),
                         "messages" : "Reminder H-1 Sebelum Panen!"
                     }
                     db_notifikasiOut.put(outputNotifikasiPanen)
@@ -549,14 +554,15 @@ def proses_notifikasi(e = None):
                         "waktu": "H-Day"
                     }
                     db_notifikasiIn.update(notifikasi_update, all_itemsPanen[i]['key'])
-            elif (date.today() == datetime.strptime((all_itemsPanen[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() + relativedelta(days=+2)) and all_itemsPanen[i]['waktu'] == "H-Day":
-                if (datetime.now() >= datetime.combine(date.today(), time(10, 1, 00)) and datetime.now() <= datetime.combine(date.today(), time(11, 00, 00))):
+            elif (datetime.now(tz).date() == datetime.strptime((all_itemsPanen[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() + relativedelta(days=+2)) and all_itemsPanen[i]['waktu'] == "H-Day":
+                if (datetime.now(tz) >= datetime.combine(datetime.now(tz).date(), time(10, 1, 00)).astimezone(tz) and datetime.now(tz) <= datetime.combine(datetime.now(tz).date(), time(11, 00, 00)).astimezone(tz) and all_itemsPanen[i]['waktu'] == "H-Day"):
                     outputNotifikasiPanen = {
                         "username": all_itemsPanen[i]['username'],
                         "key": str(int(generateKey(tm.time() * 10000))),
+                        "nama_kolam": all_itemsPanen[i]['nama_kolam'],
                         "tipe": "Panen",
                         "waktu": "H-Day",
-                        "waktu_keluar" : datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                        "waktu_keluar" : datetime.now(tz).strftime("%m/%d/%Y, %H:%M:%S"),
                         "messages" : "Waktunya Panen!"
                     }
                     db_notifikasiOut.put(outputNotifikasiPanen)
@@ -567,16 +573,17 @@ def proses_notifikasi(e = None):
 
     for i in range(0, len(all_itemsRestock)):
         # Ini untuk notifikasi restock
-        if (date.today() >= datetime.strptime((all_itemsRestock[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() 
-        and date.today() <= datetime.strptime((all_itemsRestock[i]['waktu_habis']), "%m/%d/%Y, %H:%M:%S").date()):
-            if (date.today() == datetime.strptime((all_itemsRestock[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() ):
-                if (datetime.now() >= datetime.combine(date.today(), time(10, 2, 00)) and datetime.now() <= datetime.combine(date.today(), time(11, 3, 00)) and all_itemsRestock[i]['waktu'] == "H-1"):
+        if (datetime.now(tz).date() >= datetime.strptime((all_itemsRestock[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() 
+        and datetime.now(tz).date() <= datetime.strptime((all_itemsRestock[i]['waktu_habis']), "%m/%d/%Y, %H:%M:%S").date()):
+            if (datetime.now(tz).date() == datetime.strptime((all_itemsRestock[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() ):
+                if (datetime.now(tz) >= datetime.combine(datetime.now(tz).date(), time(10, 2, 00)).astimezone(tz) and datetime.now(tz) <= datetime.combine(datetime.now(tz).date(), time(11, 3, 00)).astimezone(tz) and all_itemsRestock[i]['waktu'] == "H-1"):
                     outputNotifikasiRestock = {
                         "username": all_itemsRestock[i]['username'],
                         "key": str(int(generateKey(tm.time() * 10000))),
+                        "nama_kolam": all_itemsRestock[i]['nama_kolam'],
                         "tipe": "Restock",
                         "waktu": "H-1",
-                        "waktu_keluar" : datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                        "waktu_keluar" : datetime.now(tz).strftime("%m/%d/%Y, %H:%M:%S"),
                         "messages" : "Reminder H-1 Sebelum Restock Pakan!"
                     }
                     db_notifikasiOut.put(outputNotifikasiRestock)
@@ -584,14 +591,15 @@ def proses_notifikasi(e = None):
                         "waktu": "H-Day"
                     }
                     db_notifikasiIn.update(notifikasi_update, all_itemsPanen[i]['key'])
-            elif (date.today() == datetime.strptime((all_itemsRestock[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date()  + relativedelta(days=+1)):
-                if (datetime.now() >= datetime.combine(date.today(), time(10, 2, 00)) and datetime.now() <= datetime.combine(date.today(), time(11, 3, 00)) and all_itemsRestock[i]['waktu'] == "H-Day"):
+            elif (datetime.now(tz).date() == datetime.strptime((all_itemsRestock[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date()  + relativedelta(days=+1)):
+                if (datetime.now(tz) >= datetime.combine(datetime.now(tz).date(), time(10, 2, 00)).astimezone(tz) and datetime.now(tz) <= datetime.combine(datetime.now(tz).date(), time(11, 3, 00)).astimezone(tz) and all_itemsRestock[i]['waktu'] == "H-Day"):
                     outputNotifikasiRestock = {
                         "username": all_itemsRestock[i]['username'],
                         "key": str(int(generateKey(tm.time() * 10000))),
+                        "nama_kolam": all_itemsRestock[i]['nama_kolam'],
                         "tipe": "Restock",
                         "waktu": "H-Day",
-                        "waktu_keluar" : datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                        "waktu_keluar" : datetime.now(tz).strftime("%m/%d/%Y, %H:%M:%S"),
                         "messages" : "Waktunya Restock Pakan!"
                     }
                     db_notifikasiOut.put(outputNotifikasiRestock)
@@ -622,7 +630,7 @@ def post_berita(berita: BeritaDanPedomanIn):
         "key": str(int(generateKey(tm.time() * 10000))),
         "tipe": "berita",
         "judul_berita_dan_pedoman": berita.judul_berita_dan_pedoman,
-        "tanggal_berita_dan_pedoman": datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+        "tanggal_berita_dan_pedoman": datetime.now(tz).strftime("%m/%d/%Y, %H:%M:%S"),
         "isi_berita_dan_pedoman": berita.isi_berita_dan_pedoman,
         "thumbnail": None
     }
@@ -646,7 +654,7 @@ def post_pedoman(pedoman: BeritaDanPedomanIn):
         'key': str(int(generateKey(tm.time() * 10000))),
         'tipe': "pedoman",
         'judul_berita_dan_pedoman': pedoman.judul_berita_dan_pedoman,
-        'tanggal_berita_dan_pedoman': datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+        'tanggal_berita_dan_pedoman': datetime.now(tz).strftime("%m/%d/%Y, %H:%M:%S"),
         'isi_berita_dan_pedoman': pedoman.isi_berita_dan_pedoman,
         'thumbnail': None
     }
@@ -663,8 +671,8 @@ def post_pedoman(pedoman: BeritaDanPedomanIn):
     return pedoman
 
 @admin_router.post("/post/beritapedoman/thumbnail", response_model=BeritaDanPedomanDB)
-def post_thumbnail(beritapedomanID: str, request: Request, img: UploadFile):
-    req_beritapedoman = db_beritadanpedoman.fetch({'key': beritapedomanID})
+async def post_thumbnail(beritadanpedoman_id: str, request: Request, img: UploadFile):
+    req_beritapedoman = db_beritadanpedoman.fetch({'key': beritadanpedoman_id})
 
     if req_beritapedoman.items == []:
         raise HTTPException(
@@ -673,7 +681,7 @@ def post_thumbnail(beritapedomanID: str, request: Request, img: UploadFile):
         )
     
     id = generate_id()
-    file_content = img.read()
+    file_content = await img.read()
     file_name = f"{id}_{req_beritapedoman.items[0]['judul_berita_dan_pedoman']}.jpg"
     drive_thumbnail.put(file_name, file_content)
 
@@ -686,25 +694,17 @@ def post_thumbnail(beritapedomanID: str, request: Request, img: UploadFile):
 
     return req_beritapedoman.items[0]
 
-#admin - delete berita //nanti pakai key-nya untuk menghapus
-@admin_router.delete("/delete/berita")
-def delete_berita():
-    req_berita = db_beritadanpedoman.fetch({"tipe": "berita"})
-    db_beritadanpedoman.delete(req_berita.items[0]['key'])
-    return {'message': 'success'}
-
-# admin - delete pedoman - the lastest 
-# maybe we can changes this into by "key"
-@admin_router.delete("/delete/pedoman")
-def delete_pedoman():
-    req_pedoman = db_beritadanpedoman.fetch({"tipe": "pedoman"})
-    db_beritadanpedoman.delete(req_pedoman.items[0]['key'])
-    return {'message': 'success'}
-
-# untuk menghapus pedoman dengan klik lewat trigger kunci-nya yang bakal dilihat kunci-nya dari artikel yang sedang dilihat
+# Menghapus berita dan pedoman berdasarkan id
 @admin_router.delete("/delete/beritadanpedoman")
 def delete_pedomanklik(beritadanpedoman_id: str):
     req_pedoman = db_beritadanpedoman.fetch({"key": beritadanpedoman_id})
+
+    if req_pedoman.items == []:
+        raise HTTPException(
+        status_code=404,
+        detail="Berita atau Pedoman not found"
+        )
+
     db_beritadanpedoman.delete(req_pedoman.items[0]['key'])
     return {'message': 'success'}
 

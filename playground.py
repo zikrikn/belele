@@ -1,67 +1,72 @@
-from datetime import date, datetime, time, timedelta
+import pytz
+from datetime import datetime, time, timedelta
 from dateutil.relativedelta import relativedelta
-import time as tm
 
+# Menentukan timezone Indonesia Barat
+tz = pytz.timezone('Asia/Jakarta')
 
-h = date.today() + relativedelta(days=+2) 
-print(h)
+# Mengonversi waktu sekarang menjadi waktu di Indonesia Barat
+local_time = datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S")
+print(local_time)
 
-v = h + relativedelta(days=+5)
+print((datetime.now(tz).date() + relativedelta(days=+1)).strftime("%m/%d/%Y, %H:%M:%S"))
 
-print("HELLO : ", v)
+def hitung_jumlah_pakan(jumlah_lele, berat_lele, kandungan_energi, faktor_konversi, stok_pakan):
+    # Hitung berat total lele
+    berat_total_lele = jumlah_lele * berat_lele
+    # Hitung jumlah pakan yang dibutuhkan dengan rumus yang disebutkan sebelumnya
+    jumlah_pakan = (berat_total_lele/ kandungan_energi) * faktor_konversi
+    # Jika stok pakan kurang dari jumlah pakan yang dibutuhkan, kembalikan stok pakan sebagai jumlah pakan harian
+    if stok_pakan < jumlah_pakan:
+        return round(stok_pakan)
+    # Jika stok pakan lebih dari atau sama dengan jumlah pakan yang dibutuhkan, kembalikan jumlah pakan yang dibutuhkan sebagai jumlah pakan harian
+    else:
+        return round(jumlah_pakan)
 
-y = date.today()
-print(y)
+def waktu_panen(jumlah_pakan_harian, lama_panen, waktu_panen_input):
+    # Hitung jumlah hari yang diperlukan untuk panen
+    jumlah_hari_panen = lama_panen / jumlah_pakan_harian
+    # Hitung waktu reminder panen dengan menambahkan jumlah hari yang diperlukan untuk panen pada waktu panen
+    waktu_panen = waktu_panen_input + timedelta(days=jumlah_hari_panen)
+    # Kembalikan waktu reminder panen dalam format YYYY-MM-DD HH:MM:SS
+    return waktu_panen
 
-if date.today() == date.today():
-    print("HEYO")
-    tm.sleep(10)
+waktu_panen_result = waktu_panen(hitung_jumlah_pakan(1000, 50, 3.5, 0.5, 2000), 60, (datetime.now(tz).date() + relativedelta(months=+2)))
 
-t1 = time(8, 00, 00)
-t2 = time(12, 00, 00)
-t3 = time(17, 00, 00)
+print(waktu_panen_result.strftime("%m/%d/%Y, %H:%M:%S"))
+print(type(waktu_panen_result.strftime("%m/%d/%Y, %H:%M:%S")))
+print((waktu_panen_result + relativedelta(months=+2, days=+6)).strftime("%m/%d/%Y, %H:%M:%S"))
 
-pagi = datetime.combine(date.today(), t1)
-siang = datetime.combine(date.today(), t2)
-sore = datetime.combine(date.today(), t3)
+print(datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"))
 
-result = datetime.today() + timedelta(hours=4, minutes=10, seconds=10)
+inT1 = time(8, 00, 00)
+inT2 = time(12, 00, 00)
+inT3 = time(17, 00, 00)
 
-print(result)
+outT1 = time(9, 00, 00)
+outT2 = time(13, 00, 00)
+outT3 = time(18, 00, 00)
 
+datetime.now()
+datetime.now(tz).date()
 
+inPagi = datetime.combine(datetime.now(tz).date(), inT1).astimezone(tz)
+inSiang = datetime.combine(datetime.now(tz).date(), inT2)
+inSore = datetime.combine(datetime.now(tz).date(), inT3)
+outPagi = datetime.combine(datetime.now(tz).date(), outT1)
+outSiang = datetime.combine(datetime.now(tz).date(), outT2)
+outSore = datetime.combine(datetime.now(tz).date(), outT3)
 
-# dt1 = datetime.datetime(2022,3,27,13,27,45,46000) 
-# dt2 = datetime.datetime(2022,6,30,14,28) 
-# tdelta = dt2 - dt1 
-# print(tdelta) 
-# print(type(tdelta))
+print(inPagi)
+print(datetime.now(tz))
+print(datetime.now())
 
-# i = 123
-# print(type(i))
+if inPagi <= datetime.now(tz):
+    print("inPagi")
 
-# if (datetime.datetime.now() >= datetime.datetime(2022,3,27)):
-#     print("2121") #Ini bisa dianggap masuk
-#     #dan langsung hapus di sini di database notifikasi agar tidak berlanjut keluar
+if datetime.now(tz).date() > datetime.strptime(("12/10/2022, 00:00:00"), "%m/%d/%Y, %H:%M:%S").date():
+    print("Berjalan")
 
+print(datetime.strptime(("12/28/2022, 00:00:00"), "%m/%d/%Y, %H:%M:%S").date())
 
-#we have to 2 table yakni, inputNotifikasi dan outputNotifikasi
-
-
-
-#inputNotifikasi
-'''
-nomorNotifikasi
-
-while True:
-    
-
-'''
-
-d = [{'key1': '01', 'key2': '01', 'key3': '01'}, {'key1': '02', 'key2': '02', 'key3': '02'}]
-
-print(d[1]['key1'])
-
-# h = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
-
-# print(h)
+print(datetime.now(tz).date())

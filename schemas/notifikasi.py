@@ -5,6 +5,7 @@ from schemas.const import Base
 
 class inputNotifikasi(Base):
     key: str #Notifikasi.ID
+    nama_kolam: str 
     tipe: str
     waktu: Union[str, None] = None
     waktu_masuk: Union[datetime, date, timedelta, str, None] = None
@@ -13,6 +14,7 @@ class inputNotifikasi(Base):
 
 class outputNotifikasi(Base):
     key: str #Notifikasi.ID
+    nama_kolam: str
     tipe: str
     waktu: Union[str, None] = None
     waktu_keluar: Union[datetime, date, timedelta, str, None] = None
