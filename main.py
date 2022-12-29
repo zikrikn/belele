@@ -20,7 +20,7 @@ from drive import *
 import uvicorn
 # Others Libary
 from pydantic import ValidationError
-from datetime import datetime, time
+from datetime import datetime, time, tzinfo, timedelta
 from dateutil.relativedelta import relativedelta
 import time as tm
 import random
@@ -28,23 +28,20 @@ import string
 import pytz
 
 # Deta Cron
-from deta import App
+# from deta import App
 
-app = App(FastAPI(
-    title="LeMES",
-    version="1.0",
-    prefix="/api"
-))
-
-
-# app = FastAPI(
+# app = App(FastAPI(
 #     title="LeMES",
 #     version="1.0",
 #     prefix="/api"
-# )
+# ))
 
-# Menentukan timezone Indonesia Barat
-tz = pytz.timezone('Asia/Jakarta')
+
+app = FastAPI(
+    title="LeMES",
+    version="1.0",
+    prefix="/api"
+)
 
 # Generate key to make the lastest record on the top.
 def generateKey(timestap):
@@ -54,6 +51,14 @@ def generateKey(timestap):
 # Generate a random string of ASCII characters.
 def generate_id(length: int = 8) -> str:
     return "".join(random.choices(string.ascii_lowercase, k=length))
+
+# Menentukan timezone Indonesia Barat
+tz = pytz.timezone('Asia/Jakarta')
+class TZ(tzinfo):
+    def utcoffset(self, dt):
+        return timedelta(hours=7)
+
+tz_py2 = TZ() # untk melakukan return detatime in Python 2
 
 @app.get("/", include_in_schema=False)
 def redirect_docs():
@@ -283,7 +288,7 @@ def insert_hitung_jumlah_pakan(kolam: KolamIn, user: UserOut = Depends(get_curre
         "waktu" : "Pagi",
         "waktu_masuk": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
         "waktu_keluar": (datetime.now(tz).date() + relativedelta(days=+1)).strftime("%m/%d/%Y, %H:%M:%S"),
-        "waktu_habis": (datetime.now(tz).date() + relativedelta(days=+30)).strftime("%m/%d/%Y, %H:%M:%S")
+        "waktu_habis": waktu_panen_result.strftime("%m/%d/%Y, %H:%M:%S")
     }
 
     try:
@@ -415,8 +420,8 @@ def search(nama_kolam: str, user: UserOut = Depends(get_current_user)):
 ''''''''''''
 
 # Cron Job Deta dengan Trigger 1 menit sekali
-@app.lib.cron()
-@app.get("/proses_notifikasi", summary="Notifikasi", include_in_schema=False)
+# @app.lib.cron()
+@app.get("/proses_notifikasi", summary="Notifikasi")
 def proses_notifikasi(e = None):
     inT1 = time(8, 00, 00)
     inT2 = time(12, 00, 00)
@@ -426,12 +431,12 @@ def proses_notifikasi(e = None):
     outT2 = time(13, 00, 00)
     outT3 = time(18, 00, 00)
 
-    inPagi = datetime.combine(datetime.now(tz).date(), inT1).astimezone(tz)
-    inSiang = datetime.combine(datetime.now(tz).date(), inT2).astimezone(tz)
-    inSore = datetime.combine(datetime.now(tz).date(), inT3).astimezone(tz)
-    outPagi = datetime.combine(datetime.now(tz).date(), outT1).astimezone(tz)
-    outSiang = datetime.combine(datetime.now(tz).date(), outT2).astimezone(tz)
-    outSore = datetime.combine(datetime.now(tz).date(), outT3).astimezone(tz)
+    inPagi = datetime.combine(datetime.now().date(), inT1).replace(tzinfo=tz_py2)
+    inSiang = datetime.combine(datetime.now().date(), inT2).replace(tzinfo=tz_py2)
+    inSore = datetime.combine(datetime.now().date(), inT3).replace(tzinfo=tz_py2)
+    outPagi = datetime.combine(datetime.now().date(), outT1).replace(tzinfo=tz_py2)
+    outSiang = datetime.combine(datetime.now().date(), outT2).replace(tzinfo=tz_py2)
+    outSore = datetime.combine(datetime.now().date(), outT3).replace(tzinfo=tz_py2)
 
     notif_resHarian = db_notifikasiIn.fetch({"tipe":"Harian"})
     all_itemsHarian = notif_resHarian.items
@@ -442,12 +447,11 @@ def proses_notifikasi(e = None):
     notif_resRestock = db_notifikasiIn.fetch({"tipe":"Restock"})
     all_itemsRestock = notif_resRestock.items
 
-
     for i in range(0, len(all_itemsHarian)):
         # Ini untuk notifikasi harian
-        if (datetime.now(tz).date() >= datetime.strptime((all_itemsHarian[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() 
-        and datetime.now(tz).date() <= datetime.strptime((all_itemsHarian[i]['waktu_habis']), "%m/%d/%Y, %H:%M:%S").date()):
-            if (datetime.now(tz) >= inPagi and datetime.now(tz) <= outPagi and all_itemsHarian[i]['waktu'] == "Pagi"):
+        if (datetime.now().replace(tzinfo=tz_py2).date() >= datetime.strptime((all_itemsHarian[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() 
+        and datetime.now().replace(tzinfo=tz_py2).date() <= datetime.strptime((all_itemsHarian[i]['waktu_habis']), "%m/%d/%Y, %H:%M:%S").date()):
+            if (datetime.now().replace(tzinfo=tz_py2) >= inPagi and datetime.now().replace(tzinfo=tz_py2) <= outPagi and all_itemsHarian[i]['waktu'] == "Pagi"):
                 outputNotifikasiHarian = {
                     "username": all_itemsHarian[i]['username'],
                     "key": str(int(generateKey(tm.time() * 10000))),
@@ -462,7 +466,7 @@ def proses_notifikasi(e = None):
                     "waktu": "Siang"
                 }
                 db_notifikasiIn.update(notifikasi_update, all_itemsHarian[i]['key'])
-            elif (datetime.now(tz) >= inSiang and datetime.now(tz) <= outSiang and all_itemsHarian[i]['waktu'] == "Siang"):
+            elif (datetime.now().replace(tzinfo=tz_py2) >= inSiang and datetime.now().replace(tzinfo=tz_py2) <= outSiang and all_itemsHarian[i]['waktu'] == "Siang"):
                 outputNotifikasiHarian = {
                     "username": all_itemsHarian[i]['username'],
                     "key": str(int(generateKey(tm.time() * 10000))),
@@ -477,7 +481,7 @@ def proses_notifikasi(e = None):
                     "waktu": "Sore"
                 }
                 db_notifikasiIn.update(notifikasi_update, all_itemsHarian[i]['key'])
-            elif (datetime.now(tz) >= inSore and datetime.now(tz) <= outSore and all_itemsHarian[i]['waktu'] == "Sore"):
+            elif (datetime.now().replace(tzinfo=tz_py2) >= inSore and datetime.now().replace(tzinfo=tz_py2) <= outSore and all_itemsHarian[i]['waktu'] == "Sore"):
                 outputNotifikasiHarian = {
                     "username": all_itemsHarian[i]['username'],
                     "key": str(int(generateKey(tm.time() * 10000))),
@@ -492,38 +496,14 @@ def proses_notifikasi(e = None):
                     "waktu": "Pagi"
                 }
                 db_notifikasiIn.update(notifikasi_update, all_itemsHarian[i]['key'])
-            elif (datetime.now(tz) >= outSore):
-                notifikasi_nitip = all_itemsHarian[i]
-                db_notifikasiIn.delete(all_itemsHarian[i]['key'])
-
-                # Ini last point sehari dan akan diinput ke notifikasi harian besok dengan update waktu
-                inputNotifikasiHarian = {
-                    "username": notifikasi_nitip['username'],
-                    "key": str(int(generateKey(tm.time() * 10000))),
-                    "nama_kolam": notifikasi_nitip['nama_kolam'],
-                    "tipe": "Harian",
-                    "waktu": notifikasi_nitip['waktu'],
-                    "waktu_masuk": notifikasi_nitip['waktu_masuk'],
-                    "waktu_keluar": (datetime.now(tz).date() + relativedelta(days=+1)).strftime("%m/%d/%Y, %H:%M:%S"),
-                    "waktu_habis": notifikasi_nitip['waktu_habis'],
-                }
-
-                try:
-                    validated_new_notificationharian = inputNotifikasi(**inputNotifikasiHarian)
-                    db_notifikasiIn.put(validated_new_notificationharian.dict())
-                except ValidationError:
-                    raise HTTPException(
-                        status_code=404,
-                        detail="Invalid input value"
-                    )
 
     # Yang di bawah lebih baik jika dilock
     for i in range(0, len(all_itemsPanen)):        
         # Ini untuk notifkasi panen
-        if (datetime.now(tz).date() >= datetime.strptime((all_itemsPanen[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() 
-        and datetime.now(tz).date() <= datetime.strptime((all_itemsPanen[i]['waktu_habis']), "%m/%d/%Y, %H:%M:%S").date()):
-            if (datetime.now(tz).date() == datetime.strptime((all_itemsPanen[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date()) :
-                if (datetime.now(tz) >= datetime.combine(datetime.now(tz).date(), time(10, 1, 00)).astimezone(tz) and datetime.now(tz) <= datetime.combine(datetime.now(tz).date(), time(11, 2, 00)).astimezone(tz) and all_itemsPanen[i]['waktu'] == "H-2"):
+        if (datetime.now().replace(tzinfo=tz_py2).date() >= datetime.strptime((all_itemsPanen[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() 
+        and datetime.now().replace(tzinfo=tz_py2).date() <= datetime.strptime((all_itemsPanen[i]['waktu_habis']), "%m/%d/%Y, %H:%M:%S").date()):
+            if (datetime.now().replace(tzinfo=tz_py2).date() == datetime.strptime((all_itemsPanen[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date()) :
+                if (datetime.now().replace(tzinfo=tz_py2) >= datetime.combine(datetime.now().date(), time(10, 1, 00)).replace(tzinfo=tz_py2) and datetime.now().replace(tzinfo=tz_py2) <= datetime.combine(datetime.now().date(), time(11, 2, 00)).replace(tzinfo=tz_py2) and all_itemsPanen[i]['waktu'] == "H-2"):
                     outputNotifikasiPanen = {
                         "username": all_itemsPanen[i]['username'],
                         "key": str(int(generateKey(tm.time() * 10000))),
@@ -538,8 +518,8 @@ def proses_notifikasi(e = None):
                         "waktu": "H-1"
                     }
                     db_notifikasiIn.update(notifikasi_update, all_itemsPanen[i]['key'])
-            elif (datetime.now(tz).date() == datetime.strptime((all_itemsPanen[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() + relativedelta(days=+1)):
-                if (datetime.now(tz) >= datetime.combine(datetime.now(tz).date(), time(10, 1, 00)).astimezone(tz) and datetime.now(tz) <= datetime.combine(datetime.now(tz).date(), time(11, 2, 00)).astimezone(tz) and all_itemsPanen[i]['waktu'] == "H-1"):
+            elif (datetime.now().replace(tzinfo=tz_py2).date() == datetime.strptime((all_itemsPanen[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() + relativedelta(days=+1)):
+                if (datetime.now().replace(tzinfo=tz_py2) >= datetime.combine(datetime.now().date(), time(10, 1, 00)).replace(tzinfo=tz_py2) and datetime.now().replace(tzinfo=tz_py2) <= datetime.combine(datetime.now().date(), time(11, 2, 00)).replace(tzinfo=tz_py2) and all_itemsPanen[i]['waktu'] == "H-1"):
                     outputNotifikasiPanen = {
                         "username": all_itemsPanen[i]['username'],
                         "key": str(int(generateKey(tm.time() * 10000))),
@@ -554,8 +534,8 @@ def proses_notifikasi(e = None):
                         "waktu": "H-Day"
                     }
                     db_notifikasiIn.update(notifikasi_update, all_itemsPanen[i]['key'])
-            elif (datetime.now(tz).date() == datetime.strptime((all_itemsPanen[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() + relativedelta(days=+2)) and all_itemsPanen[i]['waktu'] == "H-Day":
-                if (datetime.now(tz) >= datetime.combine(datetime.now(tz).date(), time(10, 1, 00)).astimezone(tz) and datetime.now(tz) <= datetime.combine(datetime.now(tz).date(), time(11, 00, 00)).astimezone(tz) and all_itemsPanen[i]['waktu'] == "H-Day"):
+            elif (datetime.now().replace(tzinfo=tz_py2).date() == datetime.strptime((all_itemsPanen[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() + relativedelta(days=+2)) and all_itemsPanen[i]['waktu'] == "H-Day":
+                if (datetime.now().replace(tzinfo=tz_py2) >= datetime.combine(datetime.now().date(), time(10, 1, 00)).replace(tzinfo=tz_py2) and datetime.now().replace(tzinfo=tz_py2) <= datetime.combine(datetime.now().date(), time(11, 00, 00)).replace(tzinfo=tz_py2) and all_itemsPanen[i]['waktu'] == "H-Day"):
                     outputNotifikasiPanen = {
                         "username": all_itemsPanen[i]['username'],
                         "key": str(int(generateKey(tm.time() * 10000))),
@@ -573,10 +553,10 @@ def proses_notifikasi(e = None):
 
     for i in range(0, len(all_itemsRestock)):
         # Ini untuk notifikasi restock
-        if (datetime.now(tz).date() >= datetime.strptime((all_itemsRestock[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() 
-        and datetime.now(tz).date() <= datetime.strptime((all_itemsRestock[i]['waktu_habis']), "%m/%d/%Y, %H:%M:%S").date()):
-            if (datetime.now(tz).date() == datetime.strptime((all_itemsRestock[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() ):
-                if (datetime.now(tz) >= datetime.combine(datetime.now(tz).date(), time(10, 2, 00)).astimezone(tz) and datetime.now(tz) <= datetime.combine(datetime.now(tz).date(), time(11, 3, 00)).astimezone(tz) and all_itemsRestock[i]['waktu'] == "H-1"):
+        if (datetime.now().replace(tzinfo=tz_py2).date() >= datetime.strptime((all_itemsRestock[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() 
+        and datetime.now().replace(tzinfo=tz_py2).date() <= datetime.strptime((all_itemsRestock[i]['waktu_habis']), "%m/%d/%Y, %H:%M:%S").date()):
+            if (datetime.now().replace(tzinfo=tz_py2).date() == datetime.strptime((all_itemsRestock[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date()):
+                if (datetime.now().replace(tzinfo=tz_py2) >= datetime.combine(datetime.now().date(), time(10, 2, 00)).replace(tzinfo=tz_py2) and datetime.now().replace(tzinfo=tz_py2) <= datetime.combine(datetime.now().date(), time(11, 3, 00)).replace(tzinfo=tz_py2) and all_itemsRestock[i]['waktu'] == "H-1"):
                     outputNotifikasiRestock = {
                         "username": all_itemsRestock[i]['username'],
                         "key": str(int(generateKey(tm.time() * 10000))),
@@ -591,8 +571,8 @@ def proses_notifikasi(e = None):
                         "waktu": "H-Day"
                     }
                     db_notifikasiIn.update(notifikasi_update, all_itemsPanen[i]['key'])
-            elif (datetime.now(tz).date() == datetime.strptime((all_itemsRestock[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date()  + relativedelta(days=+1)):
-                if (datetime.now(tz) >= datetime.combine(datetime.now(tz).date(), time(10, 2, 00)).astimezone(tz) and datetime.now(tz) <= datetime.combine(datetime.now(tz).date(), time(11, 3, 00)).astimezone(tz) and all_itemsRestock[i]['waktu'] == "H-Day"):
+            elif (datetime.now().replace(tzinfo=tz_py2).date() == datetime.strptime((all_itemsRestock[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date()  + relativedelta(days=+1)):
+                if (datetime.now().replace(tzinfo=tz_py2) >= datetime.combine(datetime.now().date(), time(10, 2, 00)).replace(tzinfo=tz_py2) and datetime.now().replace(tzinfo=tz_py2) <= datetime.combine(datetime.now().date(), time(11, 3, 00)).replace(tzinfo=tz_py2) and all_itemsRestock[i]['waktu'] == "H-Day"):
                     outputNotifikasiRestock = {
                         "username": all_itemsRestock[i]['username'],
                         "key": str(int(generateKey(tm.time() * 10000))),
