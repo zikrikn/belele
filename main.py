@@ -266,7 +266,7 @@ def insert_hitung_jumlah_pakan(kolam: KolamIn, user: UserOut = Depends(get_curre
         "jumlah_pakan_harian": hitung_jumlah_pakan(kolam.jumlah_lele, kolam.berat_lele, 3.5, 0.5, kolam.stock_pakan),
         "waktu_panen": waktu_panen_result.strftime("%m/%d/%Y, %H:%M:%S"),
         "waktu_restock": None,
-        "restock_ulang": False
+        "allow_restock_ulang": False
     }
 
     try:
@@ -348,7 +348,7 @@ def menghitung_restock(nama_kolam: str, user: UserOut = Depends(get_current_user
     
     update = {
         "waktu_restock": waktu_reminder_restock_result.strftime("%m/%d/%Y, %H:%M:%S"),
-        "restock_ulang": True # Ini buat mempermudah front end
+        "allow_restock_ulang": True # Ini buat mempermudah front end
     }
     assign_restock['waktu_restock'] = waktu_reminder_restock_result.strftime("%m/%d/%Y, %H:%M:%S")
     db_kolam.update(update, assign_restock['key'])
@@ -377,7 +377,7 @@ def menghitung_restock(nama_kolam: str, user: UserOut = Depends(get_current_user
 
     return assign_restock
 
-@kolam_router.post("/restock_ulang", summary="Restock Ulang Pakan Lele")
+@kolam_router.post("/restock_ulang", summary="Restock Ulang Pakan Lele", response_model=RestockUlangOut)
 def restock_ulang(nama_kolam: str, stock_pakan: float, user: UserOut = Depends(get_current_user)):
     req_restock = db_kolam.fetch({'nama_kolam': (nama_kolam).lower(), 'username': user.username})
 
@@ -427,18 +427,26 @@ def restock_ulang(nama_kolam: str, stock_pakan: float, user: UserOut = Depends(g
     outSore = datetime.combine(datetime.now().date(), outT3).replace(tzinfo=tz_py2)
 
     if (datetime.now().replace(tzinfo=tz_py2) >= inPagi and datetime.now().replace(tzinfo=tz_py2) <= outPagi):
-        waktu_ketika_input = "Pagi"
+        notifikasi_update_harian = {
+            "waktu" : "Pagi",
+            "waktu_masuk": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
+            "waktu_keluar": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S")
+        }
+        db_notifikasiIn.update(notifikasi_update_harian, req_restock_notif_harian.items[0]['key']) # Ini buat harian
     elif (datetime.now().replace(tzinfo=tz_py2) >= inSiang and datetime.now().replace(tzinfo=tz_py2) <= outSiang):
-        waktu_ketika_input = "Siang"
+        notifikasi_update_harian = {
+            "waktu" : "Siang",
+            "waktu_masuk": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
+            "waktu_keluar": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S")
+        }
+        db_notifikasiIn.update(notifikasi_update_harian, req_restock_notif_harian.items[0]['key']) # Ini buat harian
     elif (datetime.now().replace(tzinfo=tz_py2) >= inSore and datetime.now().replace(tzinfo=tz_py2) <= outSore):
-        waktu_ketika_input = "Sore"
-
-    notifikasi_update_harian = {
-        "waktu" : waktu_ketika_input,
-        "waktu_masuk": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
-        "waktu_keluar": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S")
-    }
-    db_notifikasiIn.update(notifikasi_update_harian, req_restock_notif_harian.items[0]['key']) # Ini buat harian
+        notifikasi_update_harian = {
+            "waktu" : "Sore",
+            "waktu_masuk": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
+            "waktu_keluar": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S")
+        }
+        db_notifikasiIn.update(notifikasi_update_harian, req_restock_notif_harian.items[0]['key']) # Ini buat harian
 
     req_restock_notif = db_notifikasiIn.fetch({'nama_kolam': req_restock.items[0]['nama_kolam'], 'username': req_restock.items[0]['username'], 'waktu': 'Done', 'tipe': 'Restock'})  
 

@@ -13,7 +13,7 @@ class KolamDB(Base):
     jumlah_pakan_harian: Union[float, None] = None
     waktu_panen: Union[datetime, date, timedelta, str, None] = None
     waktu_restock: Union[datetime, date, timedelta, str, None] = None
-    restock_ulang: bool
+    allow_restock_ulang: bool
 
 class KolamIn(BaseModel):
     nama_kolam: str #Kolam.idr
@@ -23,4 +23,10 @@ class KolamIn(BaseModel):
 
 class RestockOut(BaseModel): #This Out
     nama_kolam: str #Kolam.id
+    waktu_restock: Union[datetime, date, timedelta, str, None] = None
+
+class RestockUlangOut(BaseModel): #This Out
+    nama_kolam: str #Kolam.id
+    jumlah_pakan_harian: Union[float, None] = None
+    stock_pakan: Union[float, None] = None
     waktu_restock: Union[datetime, date, timedelta, str, None] = None
