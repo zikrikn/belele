@@ -377,7 +377,7 @@ def menghitung_restock(nama_kolam: str, user: UserOut = Depends(get_current_user
 
     return assign_restock
 
-@kolam_router.post("/restock_ulang", summary="Restock Ulang Pakan Lele", response_model=RestockUlangOut)
+@kolam_router.post("/restock_ulang", summary="Waktu Restock Ulang Pakan Lele", response_model=RestockUlangOut)
 def restock_ulang(nama_kolam: str, stock_pakan: float, user: UserOut = Depends(get_current_user)):
     req_restock = db_kolam.fetch({'nama_kolam': (nama_kolam).lower(), 'username': user.username})
 
