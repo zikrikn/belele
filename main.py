@@ -536,8 +536,11 @@ def proses_notifikasi(e = None):
             haventRestock = db_notifikasiIn.fetch({"nama_kolam": all_itemsHarian[i]['nama_kolam'], "username": all_itemsHarian[i]['username'], "tipe": "Restock"})
             havePanen = db_notifikasiIn.fetch({"nama_kolam": all_itemsHarian[i]['nama_kolam'], "username": all_itemsHarian[i]['username'], "tipe": "Panen"})   
 
-            if (len(haventRestock.items) != 0):
-                if (haventRestock.items[0]['waktu'] == "Done" and (havePanen.items[0]['waktu'] != "Done" or havePanen.items[0]['waktu'] != "Stop")):
+            # Check if there are any "Restock" items
+            if haventRestock.items:
+                # Check if the "Restock" item is in the "Done" state and the "Panen" item is not in the "Done" or "Stop" state
+                if haventRestock.items[0]['waktu'] == "Done" and havePanen.items[0]['waktu'] not in ("Done", "Stop"):
+                    # Generate a new "Harian" item
                     outputNotifikasiHarian = {
                         "username": all_itemsHarian[i]['username'],
                         "key": str(int(generateKey(tm.time() * 10000))),
@@ -547,13 +550,24 @@ def proses_notifikasi(e = None):
                         "waktu_keluar" : datetime.now(tz).strftime("%m/%d/%Y, %H:%M:%S"),
                         "messages" : "Belum Restock Pakan!"
                     }
+                    # Add the new item to the database
                     db_notifikasiOut.put(outputNotifikasiHarian)
+                    # Update the current "Harian" and "Restock" items to the "Reminder" state
                     notifikasi_update = {
                         "waktu": "Reminder"
                     }
                     db_notifikasiIn.update(notifikasi_update, all_itemsHarian[i]['key'])
                     db_notifikasiIn.update(notifikasi_update, haventRestock.items[0]['key'])
-            elif (havePanen.items[0]['waktu'] == "Done"):
+            # If there are no "Restock" items, check the state of the "Panen" item
+            elif havePanen.items[0]['waktu'] == "Stop":
+                # Update the current "Harian" item to the "Stop" state
+                notifikasi_update = {
+                    "waktu": "Stop"
+                }
+                db_notifikasiIn.update(notifikasi_update, all_itemsHarian[i]['key'])
+            # Check if the "Panen" item is in the "Done" state
+            elif havePanen.items[0]['waktu'] == "Done":
+                # Update the current "Harian" and "Panen" items to the "Stop" state
                 notifikasi_update = {
                     "waktu": "Stop"
                 }
@@ -673,17 +687,21 @@ def proses_notifikasi(e = None):
 
             havePanen = db_notifikasiIn.fetch({"nama_kolam": all_itemsHarian[i]['nama_kolam'], "username": all_itemsHarian[i]['username'], "tipe": "Panen"}) 
             
-            if (all_itemsRestock[i]['waktu'] != "Stop" and havePanen.items[0]['waktu'] == "Done"): 
-                notifikasi_update = {
+            # Check if the item exists and if it's in the "Stop" or "Done" state
+            if havePanen and (havePanen.items[0]['waktu'] == "Stop" or havePanen.items[0]['waktu'] == "Done"):
+                # Fetch the current item
+                currentItem = all_itemsRestock[i]
+
+                # Only update the item if it's not already in the "Stop" state
+                if currentItem['waktu'] != "Stop":
+                    notifikasi_update = {
                         "waktu": "Stop"
                     }
-                db_notifikasiIn.update(notifikasi_update, all_itemsRestock[i]['key'])
-                db_notifikasiIn.update(notifikasi_update, havePanen.items[0]['key'])
-            elif (all_itemsRestock[i]['waktu'] != "Stop" and havePanen.items[0]['waktu'] == "Stop"):
-                notifikasi_update = {
-                        "waktu": "Stop"
-                    }
-                db_notifikasiIn.update(notifikasi_update, all_itemsRestock[i]['key'])
+                    db_notifikasiIn.update(notifikasi_update, currentItem['key'])
+
+                    # If the "Panen" item is in the "Done" state, update it as well
+                    if havePanen.items[0]['waktu'] == "Done":
+                        db_notifikasiIn.update(notifikasi_update, havePanen.items[0]['key'])
             else:
                 if (datetime.now().replace(tzinfo=tz_py2).date() == datetime.strptime((all_itemsRestock[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date()):
                     if (datetime.now().replace(tzinfo=tz_py2) >= datetime.combine(datetime.now().date(), time(10, 2, 00)).replace(tzinfo=tz_py2) and datetime.now().replace(tzinfo=tz_py2) <= datetime.combine(datetime.now().date(), time(11, 3, 00)).replace(tzinfo=tz_py2) and all_itemsRestock[i]['waktu'] == "H-1"):
