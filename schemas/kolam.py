@@ -13,6 +13,7 @@ class KolamDB(Base):
     jumlah_pakan_harian: Union[float, None] = None
     waktu_panen: Union[datetime, date, timedelta, str, None] = None
     waktu_restock: Union[datetime, date, timedelta, str, None] = None
+    restock_ulang: bool
 
 class KolamIn(BaseModel):
     nama_kolam: str #Kolam.idr
