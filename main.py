@@ -348,6 +348,7 @@ def menghitung_restock(nama_kolam: str, user: UserOut = Depends(get_current_user
     
     update = {
         "waktu_restock": waktu_reminder_restock_result.strftime("%m/%d/%Y, %H:%M:%S"),
+        "restock_ulang": True # Ini buat mempermudah front end
     }
     assign_restock['waktu_restock'] = waktu_reminder_restock_result.strftime("%m/%d/%Y, %H:%M:%S")
     db_kolam.update(update, assign_restock['key'])
@@ -401,7 +402,7 @@ def restock_ulang(nama_kolam: str, stock_pakan: float, user: UserOut = Depends(g
     update = {
         "jumlah_pakan_harian": jumlah_pakan_harian_restock,
         "stock_pakan": stock_pakan,
-        "waktu_restock": waktu_reminder_restock_result.strftime("%m/%d/%Y, %H:%M:%S")
+        "waktu_restock": waktu_reminder_restock_result.strftime("%m/%d/%Y, %H:%M:%S"),
     }
 
     db_kolam.update(update, assign_restock['key'])
@@ -656,8 +657,8 @@ def proses_notifikasi(e = None):
                             "nama_kolam": all_itemsRestock[i]['nama_kolam'],
                             "tipe": "Restock",
                             "waktu": "H-Day",
-                            "waktu_keluar" : datetime.now(tz).strftime("%m/%d/%Y, %H:%M:%S"),
-                            "messages" : "Waktunya Restock Pakan!"
+                            "waktu_keluar": datetime.now(tz).strftime("%m/%d/%Y, %H:%M:%S"),
+                            "messages": "Waktunya Restock Pakan!"
                         }
                         db_notifikasiOut.put(outputNotifikasiRestock)
                         notifikasi_update = {
