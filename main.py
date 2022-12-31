@@ -392,7 +392,7 @@ def restock_ulang(nama_kolam: str, stock_pakan: float, user: UserOut = Depends(g
     if len(req_restock_notif_harian.items) == 0:
         raise HTTPException(
             status_code=400,
-            detail="Kolam masih belum membutuhkan restock"
+            detail="Kolam masih belum membutuhkan restock ulang atau belum melakukan restock awal"
         ) 
 
     assign_restock = req_restock.items[0]
@@ -537,7 +537,7 @@ def proses_notifikasi(e = None):
             havePanen = db_notifikasiIn.fetch({"nama_kolam": all_itemsHarian[i]['nama_kolam'], "username": all_itemsHarian[i]['username'], "tipe": "Panen"})   
 
             if (len(haventRestock.items) != 0):
-                if (haventRestock.items[0]['waktu'] == "Done" and havePanen.items[0]['waktu'] != "Done"):
+                if (haventRestock.items[0]['waktu'] == "Done" and (havePanen.items[0]['waktu'] != "Done" or havePanen.items[0]['waktu'] != "Stop")):
                     outputNotifikasiHarian = {
                         "username": all_itemsHarian[i]['username'],
                         "key": str(int(generateKey(tm.time() * 10000))),
@@ -552,11 +552,13 @@ def proses_notifikasi(e = None):
                         "waktu": "Reminder"
                     }
                     db_notifikasiIn.update(notifikasi_update, all_itemsHarian[i]['key'])
+                    db_notifikasiIn.update(notifikasi_update, haventRestock.items[0]['key'])
             elif (havePanen.items[0]['waktu'] == "Done"):
                 notifikasi_update = {
                     "waktu": "Stop"
                 }
                 db_notifikasiIn.update(notifikasi_update, all_itemsHarian[i]['key'])
+                db_notifikasiIn.update(notifikasi_update, havePanen.items[0]['key'])
             else:
                 if (datetime.now().replace(tzinfo=tz_py2) >= inPagi and datetime.now().replace(tzinfo=tz_py2) <= outPagi and all_itemsHarian[i]['waktu'] == "Pagi"):
                     outputNotifikasiHarian = {
@@ -671,7 +673,13 @@ def proses_notifikasi(e = None):
 
             havePanen = db_notifikasiIn.fetch({"nama_kolam": all_itemsHarian[i]['nama_kolam'], "username": all_itemsHarian[i]['username'], "tipe": "Panen"}) 
             
-            if havePanen.items[0]['waktu'] == "Done": 
+            if (all_itemsRestock[i]['waktu'] != "Stop" and havePanen.items[0]['waktu'] == "Done"): 
+                notifikasi_update = {
+                        "waktu": "Stop"
+                    }
+                db_notifikasiIn.update(notifikasi_update, all_itemsRestock[i]['key'])
+                db_notifikasiIn.update(notifikasi_update, havePanen.items[0]['key'])
+            elif (all_itemsRestock[i]['waktu'] != "Stop" and havePanen.items[0]['waktu'] == "Stop"):
                 notifikasi_update = {
                         "waktu": "Stop"
                     }
