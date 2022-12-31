@@ -28,20 +28,20 @@ import string
 import pytz
 
 # Deta Cron
-# from deta import App
+from deta import App
 
-# app = App(FastAPI(
-#     title="LeMES",
-#     version="1.0",
-#     prefix="/api"
-# ))
-
-
-app = FastAPI(
+app = App(FastAPI(
     title="LeMES",
     version="1.0",
     prefix="/api"
-)
+))
+
+
+# app = FastAPI(
+#     title="LeMES",
+#     version="1.0",
+#     prefix="/api"
+# )
 
 # Generate key to make the lastest record on the top.
 def generateKey(timestap):
@@ -288,7 +288,7 @@ def insert_hitung_jumlah_pakan(kolam: KolamIn, user: UserOut = Depends(get_curre
         "tipe": "Harian",
         "waktu" : "Pagi",
         "waktu_masuk": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
-        "waktu_keluar": (datetime.now(tz).date() + relativedelta(days=+1)).strftime("%m/%d/%Y, %H:%M:%S"),
+        "waktu_keluar": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
         "waktu_habis": waktu_panen_result.strftime("%m/%d/%Y, %H:%M:%S")
     }
 
@@ -387,9 +387,9 @@ def restock_ulang(nama_kolam: str, stock_pakan: float, user: UserOut = Depends(g
             detail="Data not exist"
         )
 
-    req_restock_notif = db_notifikasiIn.fetch({'nama_kolam': req_restock.items[0]['nama_kolam'], 'username': req_restock.items[0]['username'], 'waktu': 'Reminder'})   
+    req_restock_notif_harian = db_notifikasiIn.fetch({'nama_kolam': req_restock.items[0]['nama_kolam'], 'username': req_restock.items[0]['username'], 'waktu': 'Reminder'})   
 
-    if len(req_restock_notif.items) == 0:
+    if len(req_restock_notif_harian.items) == 0:
         raise HTTPException(
             status_code=400,
             detail="Kolam masih belum membutuhkan restock"
@@ -411,10 +411,45 @@ def restock_ulang(nama_kolam: str, stock_pakan: float, user: UserOut = Depends(g
     assign_restock['stock_pakan'] = stock_pakan
     assign_restock['waktu_restock'] = waktu_reminder_restock_result.strftime("%m/%d/%Y, %H:%M:%S")
 
-    notifikasi_update = {
-        "waktu": "Pagi"
+    inT1 = time(17, 1, 00)
+    inT2 = time(8, 1, 00)
+    inT3 = time(12, 1, 00)
+
+    outT1 = time(8, 00, 00)
+    outT2 = time(12, 00, 00)
+    outT3 = time(17, 00, 00)
+
+    inPagi = datetime.combine(datetime.now().date(), inT1).replace(tzinfo=tz_py2)
+    inSiang = datetime.combine(datetime.now().date(), inT2).replace(tzinfo=tz_py2)
+    inSore = datetime.combine(datetime.now().date(), inT3).replace(tzinfo=tz_py2)
+    outPagi = datetime.combine(datetime.now().date(), outT1).replace(tzinfo=tz_py2)
+    outSiang = datetime.combine(datetime.now().date(), outT2).replace(tzinfo=tz_py2)
+    outSore = datetime.combine(datetime.now().date(), outT3).replace(tzinfo=tz_py2)
+
+    if (datetime.now().replace(tzinfo=tz_py2) >= inPagi and datetime.now().replace(tzinfo=tz_py2) <= outPagi):
+        waktu_ketika_input = "Pagi"
+    elif (datetime.now().replace(tzinfo=tz_py2) >= inSiang and datetime.now().replace(tzinfo=tz_py2) <= outSiang):
+        waktu_ketika_input = "Siang"
+    elif (datetime.now().replace(tzinfo=tz_py2) >= inSore and datetime.now().replace(tzinfo=tz_py2) <= outSore):
+        waktu_ketika_input = "Sore"
+
+    notifikasi_update_harian = {
+        "waktu" : waktu_ketika_input,
+        "waktu_masuk": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
+        "waktu_keluar": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S")
     }
-    db_notifikasiIn.update(notifikasi_update, req_restock_notif.items[0]['key'])
+    db_notifikasiIn.update(notifikasi_update_harian, req_restock_notif_harian.items[0]['key']) # Ini buat harian
+
+    req_restock_notif = db_notifikasiIn.fetch({'nama_kolam': req_restock.items[0]['nama_kolam'], 'username': req_restock.items[0]['username'], 'waktu': 'Done', 'tipe': 'Restock'})  
+
+    notifikasi_update_restock = {
+        "waktu" : "H-1",
+        "waktu_masuk" : datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
+        "waktu_keluar" : waktu_reminder_restock_result.strftime("%m/%d/%Y, %H:%M:%S"),
+        "waktu_habis" : (waktu_reminder_restock_result + relativedelta(days=+2)).strftime("%m/%d/%Y, %H:%M:%S")
+    }
+
+    db_notifikasiIn.update(notifikasi_update_restock, req_restock_notif.items[0]['key']) # Ini buat restock
 
     return assign_restock
 
@@ -464,7 +499,7 @@ def search(nama_kolam: str, user: UserOut = Depends(get_current_user)):
 ''''''''''''
 
 # Cron Job Deta dengan Trigger 1 menit sekali
-# @app.lib.cron()
+@app.lib.cron()
 @app.get("/proses_notifikasi", summary="Notifikasi")
 def proses_notifikasi(e = None):
     inT1 = time(8, 00, 00)
@@ -492,22 +527,23 @@ def proses_notifikasi(e = None):
 
             haventRestock = db_notifikasiIn.fetch({"nama_kolam": all_itemsHarian[i]['nama_kolam'], "username": all_itemsHarian[i]['username'], "tipe": "Restock"})
             havePanen = db_notifikasiIn.fetch({"nama_kolam": all_itemsHarian[i]['nama_kolam'], "username": all_itemsHarian[i]['username'], "tipe": "Panen"})   
-                     
-            if (haventRestock.items[0]['waktu'] == "Done" and havePanen.items[0]['waktu'] != "Done"):
-                outputNotifikasiHarian = {
-                    "username": all_itemsHarian[i]['username'],
-                    "key": str(int(generateKey(tm.time() * 10000))),
-                    "nama_kolam": all_itemsHarian[i]['nama_kolam'],
-                    "tipe": "Harian",
-                    "waktu": "Reminder",
-                    "waktu_keluar" : datetime.now(tz).strftime("%m/%d/%Y, %H:%M:%S"),
-                    "messages" : "Belum Restock Pakan!"
-                }
-                db_notifikasiOut.put(outputNotifikasiHarian)
-                notifikasi_update = {
-                    "waktu": "Reminder"
-                }
-                db_notifikasiIn.update(notifikasi_update, all_itemsHarian[i]['key'])
+
+            if (len(haventRestock.items) != 0):
+                if (haventRestock.items[0]['waktu'] == "Done" and havePanen.items[0]['waktu'] != "Done"):
+                    outputNotifikasiHarian = {
+                        "username": all_itemsHarian[i]['username'],
+                        "key": str(int(generateKey(tm.time() * 10000))),
+                        "nama_kolam": all_itemsHarian[i]['nama_kolam'],
+                        "tipe": "Harian",
+                        "waktu": "Reminder",
+                        "waktu_keluar" : datetime.now(tz).strftime("%m/%d/%Y, %H:%M:%S"),
+                        "messages" : "Belum Restock Pakan!"
+                    }
+                    db_notifikasiOut.put(outputNotifikasiHarian)
+                    notifikasi_update = {
+                        "waktu": "Reminder"
+                    }
+                    db_notifikasiIn.update(notifikasi_update, all_itemsHarian[i]['key'])
             elif (havePanen.items[0]['waktu'] == "Done"):
                 notifikasi_update = {
                     "waktu": "Stop"
