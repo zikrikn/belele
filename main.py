@@ -280,17 +280,56 @@ def insert_hitung_jumlah_pakan(kolam: KolamIn, user: UserOut = Depends(get_curre
 
     # Meng-push ke notifikasiIn
 
+    inT1 = time(17, 00, 1)
+    inT2 = time(8, 00, 1)
+    inT3 = time(12, 00, 1)
+
+    outT1 = time(8, 00, 00)
+    outT2 = time(12, 00, 00)
+    outT3 = time(17, 00, 00)
+
+    inPagi = datetime.combine(datetime.now().date(), inT1).replace(tzinfo=tz_py2)
+    inSiang = datetime.combine(datetime.now().date(), inT2).replace(tzinfo=tz_py2)
+    inSore = datetime.combine(datetime.now().date(), inT3).replace(tzinfo=tz_py2)
+    outPagi = datetime.combine(datetime.now().date(), outT1).replace(tzinfo=tz_py2)
+    outSiang = datetime.combine(datetime.now().date(), outT2).replace(tzinfo=tz_py2)
+    outSore = datetime.combine(datetime.now().date(), outT3).replace(tzinfo=tz_py2)
+
     # Ini untuk notifikasi sehari 3 kali
-    inputNotifikasiHarian = {
-        "username": user.username,
-        "key": str(int(generateKey(tm.time() * 10000))),
-        "nama_kolam": (kolam.nama_kolam).lower(),
-        "tipe": "Harian",
-        "waktu" : "Pagi",
-        "waktu_masuk": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
-        "waktu_keluar": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
-        "waktu_habis": waktu_panen_result.strftime("%m/%d/%Y, %H:%M:%S")
-    }
+
+    if (datetime.now().replace(tzinfo=tz_py2) >= inPagi and datetime.now().replace(tzinfo=tz_py2) <= outPagi):
+        inputNotifikasiHarian = {
+            "username": user.username,
+            "key": str(int(generateKey(tm.time() * 10000))),
+            "nama_kolam": (kolam.nama_kolam).lower(),
+            "tipe": "Harian",
+            "waktu" : "Pagi",
+            "waktu_masuk": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
+            "waktu_keluar": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
+            "waktu_habis": waktu_panen_result.strftime("%m/%d/%Y, %H:%M:%S")
+        }
+    elif (datetime.now().replace(tzinfo=tz_py2) >= inSiang and datetime.now().replace(tzinfo=tz_py2) <= outSiang):
+        inputNotifikasiHarian = {
+            "username": user.username,
+            "key": str(int(generateKey(tm.time() * 10000))),
+            "nama_kolam": (kolam.nama_kolam).lower(),
+            "tipe": "Harian",
+            "waktu" : "Siang",
+            "waktu_masuk": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
+            "waktu_keluar": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
+            "waktu_habis": waktu_panen_result.strftime("%m/%d/%Y, %H:%M:%S")
+        }
+    elif (datetime.now().replace(tzinfo=tz_py2) >= inSore and datetime.now().replace(tzinfo=tz_py2) <= outSore):
+        inputNotifikasiHarian = {
+            "username": user.username,
+            "key": str(int(generateKey(tm.time() * 10000))),
+            "nama_kolam": (kolam.nama_kolam).lower(),
+            "tipe": "Harian",
+            "waktu" : "Sore",
+            "waktu_masuk": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
+            "waktu_keluar": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
+            "waktu_habis": waktu_panen_result.strftime("%m/%d/%Y, %H:%M:%S")
+        }
 
     try:
         validated_new_notificationharian = inputNotifikasi(**inputNotifikasiHarian)
