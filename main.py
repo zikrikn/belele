@@ -243,6 +243,35 @@ def waktu_panen(jumlah_pakan_harian, lama_panen, waktu_panen_input):
     # Kembalikan waktu reminder panen dalam format YYYY-MM-DD HH:MM:SS
     return waktu_panen
 
+
+def kondisi_waktu():
+    inT1 = time(17, 00, 1)
+    inT2 = time(8, 00, 1)
+    inT3 = time(12, 00, 1)
+
+    outT1 = time(8, 00, 00)
+    outT2 = time(12, 00, 00)
+    outT3 = time(17, 00, 00)
+
+    inPagi = datetime.combine(datetime.now().date(), inT1).replace(tzinfo=tz_py2) + relativedelta(days=-1)
+    inSiang = datetime.combine(datetime.now().date(), inT2).replace(tzinfo=tz_py2)
+    inSore = datetime.combine(datetime.now().date(), inT3).replace(tzinfo=tz_py2)
+    outPagi = datetime.combine(datetime.now().date(), outT1).replace(tzinfo=tz_py2)
+    outSiang = datetime.combine(datetime.now().date(), outT2).replace(tzinfo=tz_py2)
+    outSore = datetime.combine(datetime.now().date(), outT3).replace(tzinfo=tz_py2)
+
+    # Ini untuk notifikasi sehari 3 kali
+
+    now = datetime.now(tz)
+    if (now >= inPagi and now <= outPagi):
+        tipe_waktu = "Pagi"
+    elif (now >= inSiang and now <= outSiang):
+        tipe_waktu = "Siang"
+    elif (now >= inSore and now <= outSore):
+        tipe_waktu = "Sore"
+
+    return tipe_waktu
+
 @kolam_router.post("/inputdata", summary="Mengukur Jumlah Pakan Harian Lele")
 def insert_hitung_jumlah_pakan(kolam: KolamIn, user: UserOut = Depends(get_current_user)):
     req_kolam_user = db_kolam.fetch({'nama_kolam': (kolam.nama_kolam).lower(), 'username': user.username})
@@ -280,83 +309,25 @@ def insert_hitung_jumlah_pakan(kolam: KolamIn, user: UserOut = Depends(get_curre
 
     # Meng-push ke notifikasiIn
 
-    inT1 = time(17, 00, 1)
-    inT2 = time(8, 00, 1)
-    inT3 = time(12, 00, 1)
-
-    outT1 = time(8, 00, 00)
-    outT2 = time(12, 00, 00)
-    outT3 = time(17, 00, 00)
-
-    inPagi = datetime.combine(datetime.now().date(), inT1).replace(tzinfo=tz_py2) + relativedelta(days=-1)
-    inSiang = datetime.combine(datetime.now().date(), inT2).replace(tzinfo=tz_py2)
-    inSore = datetime.combine(datetime.now().date(), inT3).replace(tzinfo=tz_py2)
-    outPagi = datetime.combine(datetime.now().date(), outT1).replace(tzinfo=tz_py2)
-    outSiang = datetime.combine(datetime.now().date(), outT2).replace(tzinfo=tz_py2)
-    outSore = datetime.combine(datetime.now().date(), outT3).replace(tzinfo=tz_py2)
-
-    # Ini untuk notifikasi sehari 3 kali
-
-    if (datetime.now().replace(tzinfo=tz_py2) >= inPagi and datetime.now().replace(tzinfo=tz_py2) <= outPagi):
-        inputNotifikasiHarian = {
+    inputNotifikasiHarian = {
             "username": user.username,
             "key": str(int(generateKey(tm.time() * 10000))),
             "nama_kolam": (kolam.nama_kolam).lower(),
             "tipe": "Harian",
-            "waktu" : "Pagi",
+            "waktu" : kondisi_waktu(),
             "waktu_masuk": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
             "waktu_keluar": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
             "waktu_habis": waktu_panen_result.strftime("%m/%d/%Y, %H:%M:%S")
         }
 
-        try:
-            validated_new_notificationharian = inputNotifikasi(**inputNotifikasiHarian)
-            db_notifikasiIn.put(validated_new_notificationharian.dict())
-        except ValidationError:
-            raise HTTPException(
-                status_code=404,
-                detail="Invalid input value"
-            )
-    elif (datetime.now().replace(tzinfo=tz_py2) >= inSiang and datetime.now().replace(tzinfo=tz_py2) <= outSiang):
-        inputNotifikasiHarian = {
-            "username": user.username,
-            "key": str(int(generateKey(tm.time() * 10000))),
-            "nama_kolam": (kolam.nama_kolam).lower(),
-            "tipe": "Harian",
-            "waktu" : "Siang",
-            "waktu_masuk": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
-            "waktu_keluar": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
-            "waktu_habis": waktu_panen_result.strftime("%m/%d/%Y, %H:%M:%S")
-        }
-
-        try:
-            validated_new_notificationharian = inputNotifikasi(**inputNotifikasiHarian)
-            db_notifikasiIn.put(validated_new_notificationharian.dict())
-        except ValidationError:
-            raise HTTPException(
-                status_code=404,
-                detail="Invalid input value"
-            )
-    elif (datetime.now().replace(tzinfo=tz_py2) >= inSore and datetime.now().replace(tzinfo=tz_py2) <= outSore):
-        inputNotifikasiHarian = {
-            "username": user.username,
-            "key": str(int(generateKey(tm.time() * 10000))),
-            "nama_kolam": (kolam.nama_kolam).lower(),
-            "tipe": "Harian",
-            "waktu" : "Sore",
-            "waktu_masuk": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
-            "waktu_keluar": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
-            "waktu_habis": waktu_panen_result.strftime("%m/%d/%Y, %H:%M:%S")
-        }
-
-        try:
-            validated_new_notificationharian = inputNotifikasi(**inputNotifikasiHarian)
-            db_notifikasiIn.put(validated_new_notificationharian.dict())
-        except ValidationError:
-            raise HTTPException(
-                status_code=404,
-                detail="Invalid input value"
-            )
+    try:
+        validated_new_notificationharian = inputNotifikasi(**inputNotifikasiHarian)
+        db_notifikasiIn.put(validated_new_notificationharian.dict())
+    except ValidationError:
+        raise HTTPException(
+            status_code=404,
+            detail="Invalid input value"
+        )
 
     # Ini untuk notifikasi panen
     inputNotifikasiPanen = {
@@ -468,42 +439,12 @@ def restock_ulang(nama_kolam: str, stock_pakan: float, user: UserOut = Depends(g
     assign_restock['stock_pakan'] = stock_pakan
     assign_restock['waktu_restock'] = waktu_reminder_restock_result.strftime("%m/%d/%Y, %H:%M:%S")
 
-    inT1 = time(17, 00, 1)
-    inT2 = time(8, 00, 1)
-    inT3 = time(12, 00, 1)
-
-    outT1 = time(8, 00, 00)
-    outT2 = time(12, 00, 00)
-    outT3 = time(17, 00, 00)
-
-    inPagi = datetime.combine(datetime.now().date(), inT1).replace(tzinfo=tz_py2) + relativedelta(days=-1)
-    inSiang = datetime.combine(datetime.now().date(), inT2).replace(tzinfo=tz_py2)
-    inSore = datetime.combine(datetime.now().date(), inT3).replace(tzinfo=tz_py2)
-    outPagi = datetime.combine(datetime.now().date(), outT1).replace(tzinfo=tz_py2)
-    outSiang = datetime.combine(datetime.now().date(), outT2).replace(tzinfo=tz_py2)
-    outSore = datetime.combine(datetime.now().date(), outT3).replace(tzinfo=tz_py2)
-
-    if (datetime.now().replace(tzinfo=tz_py2) >= inPagi and datetime.now().replace(tzinfo=tz_py2) <= outPagi):
-        notifikasi_update_harian = {
-            "waktu" : "Pagi",
-            "waktu_masuk": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
-            "waktu_keluar": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S")
-        }
-        db_notifikasiIn.update(notifikasi_update_harian, req_restock_notif_harian.items[0]['key']) # Ini buat harian
-    elif (datetime.now().replace(tzinfo=tz_py2) >= inSiang and datetime.now().replace(tzinfo=tz_py2) <= outSiang):
-        notifikasi_update_harian = {
-            "waktu" : "Siang",
-            "waktu_masuk": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
-            "waktu_keluar": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S")
-        }
-        db_notifikasiIn.update(notifikasi_update_harian, req_restock_notif_harian.items[0]['key']) # Ini buat harian
-    elif (datetime.now().replace(tzinfo=tz_py2) >= inSore and datetime.now().replace(tzinfo=tz_py2) <= outSore):
-        notifikasi_update_harian = {
-            "waktu" : "Sore",
-            "waktu_masuk": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
-            "waktu_keluar": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S")
-        }
-        db_notifikasiIn.update(notifikasi_update_harian, req_restock_notif_harian.items[0]['key']) # Ini buat harian
+    notifikasi_update_harian = {
+        "waktu" : kondisi_waktu(),
+        "waktu_masuk": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
+        "waktu_keluar": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S")
+    }
+    db_notifikasiIn.update(notifikasi_update_harian, req_restock_notif_harian.items[0]['key']) # Ini buat harian
 
     req_restock_notif = db_notifikasiIn.fetch({'nama_kolam': req_restock.items[0]['nama_kolam'], 'username': req_restock.items[0]['username'], 'waktu': 'Reminder', 'tipe': 'Restock'})  
 
