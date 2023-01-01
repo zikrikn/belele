@@ -35,3 +35,8 @@ elif (datetime.now().replace(tzinfo=tz_py2) >= inSiang and datetime.now().replac
     print("Siang")
 elif (datetime.now().replace(tzinfo=tz_py2) >= inSore and datetime.now().replace(tzinfo=tz_py2) <= outSore):
     print("Sore")
+
+print(datetime.strptime(("01/01/2023, 00:00:00"), "%m/%d/%Y, %H:%M:%S").date()  + relativedelta(days=+1))
+print(datetime.now().replace(tzinfo=tz_py2).date())
+if datetime.now().replace(tzinfo=tz_py2).date() == datetime.strptime(("01/01/2023, 00:00:00"), "%m/%d/%Y, %H:%M:%S").date():
+    print("True")

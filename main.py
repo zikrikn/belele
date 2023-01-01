@@ -508,7 +508,7 @@ def search(nama_kolam: str, user: UserOut = Depends(get_current_user)):
 
 # Cron Job Deta dengan Trigger 1 menit sekali
 @app.lib.cron()
-@app.get("/proses_notifikasi", summary="Notifikasi", include_in_schema=False)
+@app.get("/proses_notifikasi", summary="Notifikasi") #include_in_schema=False
 def proses_notifikasi(e = None):
     inT1 = time(8, 00, 00)
     inT2 = time(12, 00, 00)
@@ -718,7 +718,7 @@ def proses_notifikasi(e = None):
                         notifikasi_update = {
                             "waktu": "H-Day"
                         }
-                        db_notifikasiIn.update(notifikasi_update, all_itemsPanen[i]['key'])
+                        db_notifikasiIn.update(notifikasi_update, all_itemsRestock[i]['key'])
                 elif (datetime.now().replace(tzinfo=tz_py2).date() == datetime.strptime((all_itemsRestock[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date()  + relativedelta(days=+1)):
                     if (datetime.now().replace(tzinfo=tz_py2) >= datetime.combine(datetime.now().date(), time(10, 2, 00)).replace(tzinfo=tz_py2) and datetime.now().replace(tzinfo=tz_py2) <= datetime.combine(datetime.now().date(), time(11, 3, 00)).replace(tzinfo=tz_py2) and all_itemsRestock[i]['waktu'] == "H-Day"):
                         outputNotifikasiRestock = {
@@ -734,7 +734,7 @@ def proses_notifikasi(e = None):
                         notifikasi_update = {
                             "waktu": "Done"
                         }
-                        db_notifikasiIn.update(notifikasi_update, all_itemsPanen[i]['key'])
+                        db_notifikasiIn.update(notifikasi_update, all_itemsRestock[i]['key'])
 
     # This is for return the value that in db, all of values, and it's just called it rn so it must be the recent one
     res_out_notifikasi = db_notifikasiOut.fetch()
