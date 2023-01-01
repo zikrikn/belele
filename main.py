@@ -245,7 +245,6 @@ def waktu_panen(jumlah_pakan_harian, lama_panen, waktu_panen_input):
 
 @kolam_router.post("/inputdata", summary="Mengukur Jumlah Pakan Harian Lele")
 def insert_hitung_jumlah_pakan(kolam: KolamIn, user: UserOut = Depends(get_current_user)):
-    global inputNotifikasiHarian
     req_kolam_user = db_kolam.fetch({'nama_kolam': (kolam.nama_kolam).lower(), 'username': user.username})
 
     if len(req_kolam_user.items) != 0:
@@ -309,7 +308,7 @@ def insert_hitung_jumlah_pakan(kolam: KolamIn, user: UserOut = Depends(get_curre
             "waktu_keluar": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
             "waktu_habis": waktu_panen_result.strftime("%m/%d/%Y, %H:%M:%S")
         }
-        
+
         try:
             validated_new_notificationharian = inputNotifikasi(**inputNotifikasiHarian)
             db_notifikasiIn.put(validated_new_notificationharian.dict())
