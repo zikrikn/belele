@@ -4,7 +4,7 @@
 settings.py
 playground.py
 *.pyc
-__pycache__
-.env
-.deta
-.vscode
+__pycache__/
+.env/
+.deta/
+.vscode/
