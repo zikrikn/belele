@@ -1,1 +1,1 @@
-REST API for IMPAL
+RESTful API for IMPAL's Back-End "LeMES"
