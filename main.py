@@ -387,7 +387,7 @@ def restock_ulang(nama_kolam: str, stock_pakan: float, user: UserOut = Depends(g
             detail="Data not exist"
         )
 
-    req_restock_notif_harian = db_notifikasiIn.fetch({'nama_kolam': req_restock.items[0]['nama_kolam'], 'username': req_restock.items[0]['username'], 'waktu': 'Reminder'})   
+    req_restock_notif_harian = db_notifikasiIn.fetch({'nama_kolam': req_restock.items[0]['nama_kolam'], 'username': req_restock.items[0]['username'], 'waktu': 'Reminder', 'tipe': 'Harian'})   
 
     if len(req_restock_notif_harian.items) == 0:
         raise HTTPException(
@@ -411,9 +411,9 @@ def restock_ulang(nama_kolam: str, stock_pakan: float, user: UserOut = Depends(g
     assign_restock['stock_pakan'] = stock_pakan
     assign_restock['waktu_restock'] = waktu_reminder_restock_result.strftime("%m/%d/%Y, %H:%M:%S")
 
-    inT1 = time(17, 1, 00)
-    inT2 = time(8, 1, 00)
-    inT3 = time(12, 1, 00)
+    inT1 = time(17, 00, 1)
+    inT2 = time(8, 00, 1)
+    inT3 = time(12, 00, 1)
 
     outT1 = time(8, 00, 00)
     outT2 = time(12, 00, 00)
@@ -448,7 +448,7 @@ def restock_ulang(nama_kolam: str, stock_pakan: float, user: UserOut = Depends(g
         }
         db_notifikasiIn.update(notifikasi_update_harian, req_restock_notif_harian.items[0]['key']) # Ini buat harian
 
-    req_restock_notif = db_notifikasiIn.fetch({'nama_kolam': req_restock.items[0]['nama_kolam'], 'username': req_restock.items[0]['username'], 'waktu': 'Done', 'tipe': 'Restock'})  
+    req_restock_notif = db_notifikasiIn.fetch({'nama_kolam': req_restock.items[0]['nama_kolam'], 'username': req_restock.items[0]['username'], 'waktu': 'Reminder', 'tipe': 'Restock'})  
 
     notifikasi_update_restock = {
         "waktu" : "H-1",
@@ -508,7 +508,7 @@ def search(nama_kolam: str, user: UserOut = Depends(get_current_user)):
 
 # Cron Job Deta dengan Trigger 1 menit sekali
 @app.lib.cron()
-@app.get("/proses_notifikasi", summary="Notifikasi", include_in_schema=False) 
+@app.get("/proses_notifikasi", summary="Notifikasi")
 def proses_notifikasi(e = None):
     inT1 = time(8, 00, 00)
     inT2 = time(12, 00, 00)
