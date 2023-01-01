@@ -508,7 +508,7 @@ def search(nama_kolam: str, user: UserOut = Depends(get_current_user)):
 
 # Cron Job Deta dengan Trigger 1 menit sekali
 @app.lib.cron()
-@app.get("/proses_notifikasi", summary="Notifikasi", tags=["Methods in Cron Job"])
+@app.get("/proses_notifikasi", summary="Proses Notifikasi di Cron Job", tags=["Methods in Cron Job"])
 def proses_notifikasi(e = None):
     inT1 = time(8, 00, 00)
     inT2 = time(12, 00, 00)
