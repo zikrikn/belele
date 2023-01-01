@@ -281,7 +281,7 @@ def insert_hitung_jumlah_pakan(kolam: KolamIn, user: UserOut = Depends(get_curre
     # Meng-push ke notifikasiIn
 
     # Di lokal aman, di server error
-    
+
     # inT1 = time(17, 00, 1)
     # inT2 = time(8, 00, 1)
     # inT3 = time(12, 00, 1)
@@ -338,15 +338,15 @@ def insert_hitung_jumlah_pakan(kolam: KolamIn, user: UserOut = Depends(get_curre
     #     db_notifikasiIn.put(inputNotifikasiHarian)
 
     inputNotifikasiHarian = {
-            "username": user.username,
-            "key": str(int(generateKey(tm.time() * 10000))),
-            "nama_kolam": (kolam.nama_kolam).lower(),
-            "tipe": "Harian",
-            "waktu" : "Pagi",
-            "waktu_masuk": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
-            "waktu_keluar": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
-            "waktu_habis": waktu_panen_result.strftime("%m/%d/%Y, %H:%M:%S")
-        }
+        "username": user.username,
+        "key": str(int(generateKey(tm.time() * 10000))),
+        "nama_kolam": (kolam.nama_kolam).lower(),
+        "tipe": "Harian",
+        "waktu" : "Pagi",
+        "waktu_masuk": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
+        "waktu_keluar": datetime.now(tz).date().strftime("%m/%d/%Y, %H:%M:%S"),
+        "waktu_habis": waktu_panen_result.strftime("%m/%d/%Y, %H:%M:%S")
+    }
 
     try:
         validated_new_notificationharian = inputNotifikasi(**inputNotifikasiHarian)
