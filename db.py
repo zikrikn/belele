@@ -2,11 +2,6 @@ from deta import Deta  # Import Deta
 from settings import PROJECT_KEY
 
 # Initialize with a Project Key
-'''
-Key Name kax8yf
-Key Description Project Key: kax8yf
-Project Key c08rolsw_ACgvH25t8UoevXnPHMqVWtFBwJ7rtYPN
-'''
 deta = Deta(PROJECT_KEY)
 
 #Admin
@@ -19,4 +14,4 @@ db_notifikasiIn = deta.Base("db_notifikasiIn")
 db_notifikasiOut = deta.Base("db_notifikasiOut")
 db_user = deta.Base("db_user")
 db_profile = deta.Base("db_profile")
-db_test = deta.Base("db_test")
+#db_test = deta.Base("db_test")
