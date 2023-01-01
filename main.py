@@ -288,7 +288,7 @@ def insert_hitung_jumlah_pakan(kolam: KolamIn, user: UserOut = Depends(get_curre
     outT2 = time(12, 00, 00)
     outT3 = time(17, 00, 00)
 
-    inPagi = datetime.combine(datetime.now().date(), inT1).replace(tzinfo=tz_py2)
+    inPagi = datetime.combine(datetime.now().date(), inT1).replace(tzinfo=tz_py2) + relativedelta(days=-1)
     inSiang = datetime.combine(datetime.now().date(), inT2).replace(tzinfo=tz_py2)
     inSore = datetime.combine(datetime.now().date(), inT3).replace(tzinfo=tz_py2)
     outPagi = datetime.combine(datetime.now().date(), outT1).replace(tzinfo=tz_py2)
@@ -476,7 +476,7 @@ def restock_ulang(nama_kolam: str, stock_pakan: float, user: UserOut = Depends(g
     outT2 = time(12, 00, 00)
     outT3 = time(17, 00, 00)
 
-    inPagi = datetime.combine(datetime.now().date(), inT1).replace(tzinfo=tz_py2)
+    inPagi = datetime.combine(datetime.now().date(), inT1).replace(tzinfo=tz_py2) + relativedelta(days=-1)
     inSiang = datetime.combine(datetime.now().date(), inT2).replace(tzinfo=tz_py2)
     inSore = datetime.combine(datetime.now().date(), inT3).replace(tzinfo=tz_py2)
     outPagi = datetime.combine(datetime.now().date(), outT1).replace(tzinfo=tz_py2)
