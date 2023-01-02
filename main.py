@@ -54,7 +54,6 @@ def generate_id(length: int = 8) -> str:
 
 # Menentukan timezone Indonesia Barat
 jakarta = pytz.timezone('Asia/Jakarta')
-
 now_jakarta = datetime.now(timezone.utc).astimezone(jakarta)
 
 @app.get("/", include_in_schema=False)
