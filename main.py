@@ -520,6 +520,29 @@ def restock_ulang(nama_kolam: str, stock_pakan: float, user: UserOut = Depends(g
 
     return assign_restock
 
+
+@app.post("/kurangi_stock_pakan_harian", summary="Menggurangi stok pakan harian", tags=["methods in cron job"])
+def kurangi_stok_pakan_harian():
+    req_kolam_notif = db_notifikasiIn.fetch([{"waktu?ne": "Done"}, {"waktu?ne": "Reminder"}, {"waktu?ne": "Stop"}])
+    all_req_kolam_notif = req_kolam_notif.items
+
+    if len(all_req_kolam_notif) == 0:
+        raise HTTPException(status_code=404, detail="Tidak ada data kolam satupun")
+
+    for i in all_req_kolam_notif:
+        req_kolam = db_kolam.fetch({"username": all_req_kolam_notif[i]['username'], "nama_kolam": all_req_kolam_notif[i]['nama_kolam']})
+        all_req_kolam = req_kolam.items
+
+        if all_req_kolam[0]['stok_pakan'] >= all_req_kolam[0]['jumlah_pakan_harian']:
+            # this is happening every day
+            update_stok_pakan = {
+                "stok_pakan": all_req_kolam[0]['stok_pakan'] - all_req_kolam[0]['jumlah_pakan_harian']
+            }
+
+            db_kolam.update(update_stok_pakan, all_req_kolam[0]['key'])
+
+    return "Stok pakan harian berhasil dikurangi"
+
     
 # Mendapatkan Info Kolam
 @kolam_router.get("/info/all", summary="Melihat Info Kolam")
@@ -599,18 +622,18 @@ def proses_notifikasi(e = None):
             if haventRestock.items:
                 # Check if the "Restock" item is in the "Done" state and the "Panen" item is not in the "Done" or "Stop" state
                 if haventRestock.items[0]['waktu'] == "Done" and havePanen.items[0]['waktu'] not in ("Done", "Stop"):
-                    # Generate a new "Harian" item
-                    outputNotifikasiHarian = {
-                        "username": all_itemsHarian[i]['username'],
-                        "key": str(int(generateKey(tm.time() * 10000))),
-                        "nama_kolam": all_itemsHarian[i]['nama_kolam'],
-                        "tipe": "Harian",
-                        "waktu": "Reminder",
-                        "waktu_keluar" : now_jakarta.strftime("%m/%d/%Y, %H:%M:%S"),
-                        "messages" : "Belum Restock Pakan!"
-                    }
-                    # Add the new item to the database
-                    db_notifikasiOut.put(outputNotifikasiHarian)
+                    # # Generate a new "Harian" item
+                    # outputNotifikasiHarian = {
+                    #     "username": all_itemsHarian[i]['username'],
+                    #     "key": str(int(generateKey(tm.time() * 10000))),
+                    #     "nama_kolam": all_itemsHarian[i]['nama_kolam'],
+                    #     "tipe": "Harian",
+                    #     "waktu": "Reminder",
+                    #     "waktu_keluar" : now_jakarta.strftime("%m/%d/%Y, %H:%M:%S"),
+                    #     "messages" : "Belum Restock Pakan!"
+                    # }
+                    # # Add the new item to the database
+                    # db_notifikasiOut.put(outputNotifikasiHarian)
                     # Update the current "Harian" and "Restock" items to the "Reminder" state
                     notifikasi_update = {
                         "waktu": "Reminder"
@@ -737,6 +760,13 @@ def proses_notifikasi(e = None):
                     }
                     db_notifikasiIn.update(notifikasi_update, all_itemsPanen[i]['key'])
 
+                    kolam_update = {
+                        "stock_pakan": 0,
+                    }
+                    req_kolam_update = db_kolam.fetch({"nama_kolam": all_itemsPanen[i]['nama_kolam'], "username": all_itemsPanen[i]['username']})
+                    db_kolam.update(kolam_update, req_kolam_update.items[0]['key'])
+
+
     notif_resRestock = db_notifikasiIn.fetch({"tipe":"Restock"})
     all_itemsRestock = notif_resRestock.items
 
@@ -796,10 +826,16 @@ def proses_notifikasi(e = None):
                         }
                         db_notifikasiIn.update(notifikasi_update, all_itemsRestock[i]['key'])
 
+                        kolam_update = {
+                            "stock_pakan": 0,
+                        }
+                        req_kolam_update = db_kolam.fetch({"nama_kolam": all_itemsRestock[i]['nama_kolam'], "username": all_itemsRestock[i]['username']})
+                        db_kolam.update(kolam_update, req_kolam_update.items[0]['key'])
+
     # This is for return the value that in db, all of values, and it's just called it rn so it must be the recent one
-    res_out_notifikasi = db_notifikasiOut.fetch()
+    # res_out_notifikasi = db_notifikasiOut.fetch()
     
-    return res_out_notifikasi.items
+    return "Success"
 
 @user_router.get("/notifikasi", summary="Get Notifikasi")
 def get_notifikasi(user: UserOut = Depends(get_current_user)):

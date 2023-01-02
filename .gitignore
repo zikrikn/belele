@@ -3,6 +3,7 @@
 
 settings.py
 playground.py
+playground_2.py
 *.pyc
 __pycache__/
 .env
