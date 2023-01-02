@@ -17,7 +17,7 @@ from db import *
 # Connecting to Drive
 from drive import *
 # Unicorn
-import uvicorn
+# import uvicorn
 # Others Libary
 from pydantic import ValidationError
 from datetime import datetime, time, tzinfo, timedelta
@@ -942,6 +942,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+# if __name__ == "__main__":
+#     uvicorn.run(app, host="127.0.0.1", port=8000)
 

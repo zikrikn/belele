@@ -1,12 +1,11 @@
 fastapi
 deta
 python-multipart
-uvicorn
+# uvicorn
 pyjwt
 passlib[bcrypt]
 datetime
 python-dateutil
-#time
 tortoise
 python-jose[cryptography]
 pytz
