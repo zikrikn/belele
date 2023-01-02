@@ -15,11 +15,11 @@ jobs:
     steps:
       # Make an HTTP request to the first REST API endpoint using the `curl` command
       - name: Send request to REST API
-        run: curl -X 'GET' 'https://api.lemes.my.id/beritapedoman/berita' -H 'accept: application/json'
+        run: curl -X GET https://api.lemes.my.id/beritapedoman/berita -H accept: application/json
 
   job2:
     runs-on: ubuntu-latest
     steps:
       # Make an HTTP request to the second REST API endpoint using the `curl` command
       - name: Send request to REST API
-        run: curl -X 'GET' 'https://api.lemes.my.id/proses_notifikasi' -H 'accept: application/json'
+        run: curl -X GET https://api.lemes.my.id/proses_notifikasi -H accept: application/json
