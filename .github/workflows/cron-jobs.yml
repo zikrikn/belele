@@ -2,10 +2,10 @@
 
 on:
   schedule:
-    # Configure the CRON schedule for the first job. In this example, the job will run every day at midnight.
+    # Configure the CRON schedule for the first job. The job will run every day at midnight.
     - cron: '0 0 * * *'
       job: job1
-    # Configure the CRON schedule for the second job. In this example, the job will run every five minutes.
+    # Configure the CRON schedule for the second job. The job will run every five minutes.
     - cron: '*/5 * * * *'
       job: job2
 
