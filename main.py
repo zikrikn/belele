@@ -816,7 +816,12 @@ def get_notifikasi(user: UserOut = Depends(get_current_user)):
 
 #admin - berita
 @admin_router.post("/post/berita", response_model=BeritaDanPedomanDB)
-def post_berita(berita: BeritaDanPedomanIn):
+def post_berita(berita: BeritaDanPedomanIn, user: UserOut = Depends(get_current_user)):
+    if user.username != "admin":
+        raise HTTPException(
+            status_code=404,
+            detail="You're not an admin, you don't have access to this page"
+        )
 
     berita = {
         "key": str(int(generateKey(tm.time() * 10000))),
@@ -840,7 +845,12 @@ def post_berita(berita: BeritaDanPedomanIn):
 
 #admin - pedoman
 @admin_router.post("/post/pedoman", response_model=BeritaDanPedomanDB)
-def post_pedoman(pedoman: BeritaDanPedomanIn):
+def post_pedoman(pedoman: BeritaDanPedomanIn, user: UserOut = Depends(get_current_user)):
+    if user.username != "admin":
+        raise HTTPException(
+            status_code=404,
+            detail="You're not an admin, you don't have access to this page"
+        )
 
     pedoman = {
         'key': str(int(generateKey(tm.time() * 10000))),
@@ -863,7 +873,13 @@ def post_pedoman(pedoman: BeritaDanPedomanIn):
     return pedoman
 
 @admin_router.post("/post/beritapedoman/thumbnail", response_model=BeritaDanPedomanDB)
-async def post_thumbnail(beritadanpedoman_id: str, request: Request, img: UploadFile):
+async def post_thumbnail(beritadanpedoman_id: str, request: Request, img: UploadFile, user: UserOut = Depends(get_current_user)):
+    if user.username != "admin":
+        raise HTTPException(
+            status_code=404,
+            detail="You're not an admin, you don't have access to this page"
+        )
+
     req_beritapedoman = db_beritadanpedoman.fetch({'key': beritadanpedoman_id})
 
     if req_beritapedoman.items == []:
@@ -874,7 +890,7 @@ async def post_thumbnail(beritadanpedoman_id: str, request: Request, img: Upload
     
     id = generate_id()
     file_content = await img.read()
-    file_name = f"{id}_{req_beritapedoman.items[0]['judul_berita_dan_pedoman']}.jpg"
+    file_name = f"{id}.jpg"
     drive_thumbnail.put(file_name, file_content)
 
     thumbnail_update = {
@@ -888,7 +904,13 @@ async def post_thumbnail(beritadanpedoman_id: str, request: Request, img: Upload
 
 # Menghapus berita dan pedoman berdasarkan id
 @admin_router.delete("/delete/beritadanpedoman", summary="Delete Berita atau Pedoman")
-def delete_beritapedoman(beritadanpedoman_id: str):
+def delete_beritapedoman(beritadanpedoman_id: str, user: UserOut = Depends(get_current_user)):
+    if user.username != "admin":
+        raise HTTPException(
+        status_code=404,
+        detail="You're not an admin, you don't have access to this page"
+        )
+        
     req_pedoman = db_beritadanpedoman.fetch({"key": beritadanpedoman_id})
 
     if req_pedoman.items == []:
