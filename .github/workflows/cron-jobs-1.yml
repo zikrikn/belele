@@ -2,7 +2,7 @@
 
 on:
   schedule:
-    # Configure the CRON schedule for the job. In this example, the job will run every day at midnight.
+    # Configure the CRON schedule for the job. The job will run every day at midnight.
     - cron: '*/5 * * * *'
 
 jobs:
