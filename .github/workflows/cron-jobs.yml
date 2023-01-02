@@ -6,7 +6,7 @@ on:
     - cron: '0 0 * * *'
       job: job1
     # Configure the CRON schedule for the second job. In this example, the job will run every five minutes.
-    - cron: '5 * * * *'
+    - cron: '*/5 * * * *'
       job: job2
 
 jobs:
