@@ -1,0 +1,14 @@
+# This is an example workflow file for running a CRON job using GitHub Actions
+
+on:
+  schedule:
+    # Configure the CRON schedule for the job. In this example, the job will run every day at midnight.
+    - cron: '*/5 * * * *'
+
+jobs:
+  cron-job:
+    runs-on: ubuntu-latest
+    steps:
+      # Make an HTTP request to the REST API endpoint using the `curl` command
+      - name: Send request to REST API
+        run: curl -X GET https://api.lemes.my.id/proses_notifikasi
