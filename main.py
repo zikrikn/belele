@@ -593,13 +593,21 @@ def search(nama_kolam: str, user: UserOut = Depends(get_current_user)):
 # @app.lib.cron()
 @app.get("/proses_notifikasi", summary="Proses Notifikasi di Cron Job", tags=["methods in cron job"])
 def proses_notifikasi(e = None):
-    inT1 = time(8, 00, 00)
-    inT2 = time(12, 00, 00)
-    inT3 = time(17, 00, 00)
+    # inT1 = time(8, 00, 00)
+    # inT2 = time(12, 00, 00)
+    # inT3 = time(17, 00, 00)
 
-    outT1 = time(9, 00, 00)
-    outT2 = time(13, 00, 00)
-    outT3 = time(18, 00, 00)
+    # outT1 = time(9, 00, 00)
+    # outT2 = time(13, 00, 00)
+    # outT3 = time(18, 00, 00)
+
+    inT1 = time(1, 00, 00)
+    inT2 = time(5, 00, 00)
+    inT3 = time(10, 00, 00)
+
+    outT1 = time(2, 00, 00)
+    outT2 = time(6, 00, 00)
+    outT3 = time(11, 00, 00)
 
     inPagi = datetime.combine(now_jakarta.date(), inT1).astimezone(jakarta)
     inSiang = datetime.combine(now_jakarta.date(), inT2).astimezone(jakarta)
