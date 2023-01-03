@@ -209,7 +209,8 @@ def hitung_jumlah_pakan(jumlah_lele, berat_lele, kandungan_energi, faktor_konver
     # Hitung berat total lele
     berat_total_lele = jumlah_lele * berat_lele
     # Hitung jumlah pakan yang dibutuhkan dengan rumus yang disebutkan sebelumnya
-    jumlah_pakan = (berat_total_lele/ kandungan_energi) * faktor_konversi
+    # It's changed for the sake of the project
+    jumlah_pakan = ((berat_total_lele / kandungan_energi) * faktor_konversi)
     # Jika stok pakan kurang dari jumlah pakan yang dibutuhkan, kembalikan stok pakan sebagai jumlah pakan harian
     if stock_pakan < jumlah_pakan:
         return round(stock_pakan)
@@ -218,22 +219,22 @@ def hitung_jumlah_pakan(jumlah_lele, berat_lele, kandungan_energi, faktor_konver
         return round(jumlah_pakan)
 
 def waktu_reminder_restock(stock_pakan, jumlah_pakan_harian):
-    # Hitung sisa stok pakan setelah 1 hari
-    sisa_stok = stock_pakan - jumlah_pakan_harian
     # Jika sisa stok kurang dari 0, maka waktu reminder restock adalah sekarang
-    if sisa_stok < 0:
+    if stock_pakan < 0:
         return now_jakarta.date()
     # Jika sisa stok lebih dari 0, hitung berapa hari lagi stok pakan akan habis
     # dan tambahkan waktu sekarang untuk mendapatkan waktu reminder restock
     else:
-        hari_sisa = sisa_stok / jumlah_pakan_harian
+        hari_sisa = stock_pakan / jumlah_pakan_harian
         return (now_jakarta.date() + timedelta(days=hari_sisa))
 
 # Waktu reminder restock itu beda dengan panen
 # Definisikan fungsi untuk menentukan waktu reminder panen
 def waktu_panen(jumlah_pakan_harian, lama_panen, waktu_panen_input):
     # Hitung jumlah hari yang diperlukan untuk panen
+
     jumlah_hari_panen = lama_panen / jumlah_pakan_harian
+    # lama_panen = stok_pakan / (jumlah_lele * berat_lele * jumlah_pakan / 1000 * 30)
     # Hitung waktu reminder panen dengan menambahkan jumlah hari yang diperlukan untuk panen pada waktu panen
     waktu_panen = waktu_panen_input + timedelta(days=jumlah_hari_panen)
     # Kembalikan waktu reminder panen dalam format YYYY-MM-DD HH:MM:SS
@@ -249,7 +250,7 @@ def insert_hitung_jumlah_pakan(kolam: KolamIn, user: UserOut = Depends(get_curre
             detail="Data already exist"
         )
     
-    waktu_panen_result = waktu_panen(hitung_jumlah_pakan(kolam.jumlah_lele, kolam.berat_lele, 3.5, 0.5, kolam.stock_pakan), 60, (now_jakarta.date()+ relativedelta(months=+2)))
+    waktu_panen_result = waktu_panen(hitung_jumlah_pakan(kolam.jumlah_lele, kolam.berat_lele, 3.5, 0.07, kolam.stock_pakan), 60, (now_jakarta.date()+ relativedelta(months=+3)))
 
     insert_kolam = {
         "username": user.username,
@@ -259,7 +260,7 @@ def insert_hitung_jumlah_pakan(kolam: KolamIn, user: UserOut = Depends(get_curre
         "berat_lele": kolam.berat_lele,
         "stock_pakan": kolam.stock_pakan,
         "waktu_tebar": now_jakarta.strftime('%m/%d/%Y, %H:%M:%S'),
-        "jumlah_pakan_harian": hitung_jumlah_pakan(kolam.jumlah_lele, kolam.berat_lele, 3.5, 0.5, kolam.stock_pakan),
+        "jumlah_pakan_harian": hitung_jumlah_pakan(kolam.jumlah_lele, kolam.berat_lele, 3.5, 0.06, kolam.stock_pakan),
         "waktu_panen": waktu_panen_result.strftime("%m/%d/%Y, %H:%M:%S"),
         "waktu_restock": None,
         "allow_restock_ulang": False

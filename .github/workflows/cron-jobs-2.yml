@@ -1,4 +1,4 @@
-# This is an example workflow file for running a CRON job using GitHub Actions
+# Running a CRON job using GitHub Actions
 
 on:
   schedule:
