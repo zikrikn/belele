@@ -205,21 +205,21 @@ async def upload_photo_profile(request: Request, img: UploadFile, user: UserOut 
 ''''''''''''
 
 # Fungsi untuk menghitung jumlah pakan harian lele
-def hitung_jumlah_pakan(jumlah_lele, berat_lele, kandungan_energi, faktor_konversi, stok_pakan):
+def hitung_jumlah_pakan(jumlah_lele, berat_lele, kandungan_energi, faktor_konversi, stock_pakan):
     # Hitung berat total lele
     berat_total_lele = jumlah_lele * berat_lele
     # Hitung jumlah pakan yang dibutuhkan dengan rumus yang disebutkan sebelumnya
     jumlah_pakan = (berat_total_lele/ kandungan_energi) * faktor_konversi
     # Jika stok pakan kurang dari jumlah pakan yang dibutuhkan, kembalikan stok pakan sebagai jumlah pakan harian
-    if stok_pakan < jumlah_pakan:
-        return round(stok_pakan)
+    if stock_pakan < jumlah_pakan:
+        return round(stock_pakan)
     # Jika stok pakan lebih dari atau sama dengan jumlah pakan yang dibutuhkan, kembalikan jumlah pakan yang dibutuhkan sebagai jumlah pakan harian
     else:
         return round(jumlah_pakan)
 
-def waktu_reminder_restock(stok_pakan, jumlah_pakan_harian):
+def waktu_reminder_restock(stock_pakan, jumlah_pakan_harian):
     # Hitung sisa stok pakan setelah 1 hari
-    sisa_stok = stok_pakan - jumlah_pakan_harian
+    sisa_stok = stock_pakan - jumlah_pakan_harian
     # Jika sisa stok kurang dari 0, maka waktu reminder restock adalah sekarang
     if sisa_stok < 0:
         return now_jakarta.date()
@@ -522,24 +522,24 @@ def restock_ulang(nama_kolam: str, stock_pakan: float, user: UserOut = Depends(g
 
 
 @app.post("/kurangi_stock_pakan_harian", summary="Menggurangi stok pakan harian", tags=["methods in cron job"])
-def kurangi_stok_pakan_harian():
+def kurangi_stock_pakan_harian():
     req_kolam_notif = db_notifikasiIn.fetch([{"waktu?ne": "Done"}, {"waktu?ne": "Reminder"}, {"waktu?ne": "Stop"}])
     all_req_kolam_notif = req_kolam_notif.items
 
     if len(all_req_kolam_notif) == 0:
         raise HTTPException(status_code=404, detail="Tidak ada data kolam satupun")
 
-    for i in all_req_kolam_notif:
+    for i in range(0, len(all_req_kolam_notif)):
         req_kolam = db_kolam.fetch({"username": all_req_kolam_notif[i]['username'], "nama_kolam": all_req_kolam_notif[i]['nama_kolam']})
         all_req_kolam = req_kolam.items
 
-        if all_req_kolam[0]['stok_pakan'] >= all_req_kolam[0]['jumlah_pakan_harian']:
+        if all_req_kolam[0]['stock_pakan'] >= all_req_kolam[0]['jumlah_pakan_harian']:
             # this is happening every day
-            update_stok_pakan = {
-                "stok_pakan": all_req_kolam[0]['stok_pakan'] - all_req_kolam[0]['jumlah_pakan_harian']
+            update_stock_pakan = {
+                "stock_pakan": all_req_kolam[0]['stock_pakan'] - all_req_kolam[0]['jumlah_pakan_harian']
             }
 
-            db_kolam.update(update_stok_pakan, all_req_kolam[0]['key'])
+            db_kolam.update(update_stock_pakan, all_req_kolam[0]['key'])
 
     return "Stok pakan harian berhasil dikurangi"
 
