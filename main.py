@@ -250,7 +250,7 @@ def insert_hitung_jumlah_pakan(kolam: KolamIn, user: UserOut = Depends(get_curre
             detail="Data already exist"
         )
     
-    waktu_panen_result = waktu_panen(hitung_jumlah_pakan(kolam.jumlah_lele, kolam.berat_lele, 3.5, 0.07, kolam.stock_pakan), 60, (now_jakarta.date()+ relativedelta(months=+3)))
+    waktu_panen_result = waktu_panen(hitung_jumlah_pakan(kolam.jumlah_lele, kolam.berat_lele, 3.5, 0.06, kolam.stock_pakan), 60, (now_jakarta.date()+ relativedelta(months=+3)))
 
     insert_kolam = {
         "username": user.username,
@@ -449,7 +449,7 @@ def restock_ulang(nama_kolam: str, stock_pakan: float, user: UserOut = Depends(g
         ) 
 
     assign_restock = req_restock.items[0]
-    jumlah_pakan_harian_restock = hitung_jumlah_pakan(assign_restock['jumlah_lele'], assign_restock['berat_lele'], 3.5, 0.5, stock_pakan)
+    jumlah_pakan_harian_restock = hitung_jumlah_pakan(assign_restock['jumlah_lele'], assign_restock['berat_lele'], 3.5, 0.06, stock_pakan)
     waktu_reminder_restock_result = waktu_reminder_restock(stock_pakan, jumlah_pakan_harian_restock)
 
     update = {
