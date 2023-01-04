@@ -721,7 +721,7 @@ def proses_notifikasi(e = None):
         if (now_jakarta.date() >= datetime.strptime((all_itemsPanen[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() 
         and now_jakarta.date() <= datetime.strptime((all_itemsPanen[i]['waktu_habis']), "%m/%d/%Y, %H:%M:%S").date()):
             if (now_jakarta.date() == datetime.strptime((all_itemsPanen[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date()) :
-                if (now_jakarta >= datetime.combine(now_jakarta.date(), time(3, 1, 00)).astimezone(jakarta) and now_jakarta <= datetime.combine(now_jakarta.date(), time(4, 2, 00)).astimezone(jakarta) and all_itemsPanen[i]['waktu'] == "H-2"):
+                if (now_jakarta >= datetime.combine(now_jakarta.date(), time(3, 00, 00)).astimezone(jakarta) and now_jakarta <= datetime.combine(now_jakarta.date(), time(4, 00, 00)).astimezone(jakarta) and all_itemsPanen[i]['waktu'] == "H-2"):
                     outputNotifikasiPanen = {
                         "username": all_itemsPanen[i]['username'],
                         "key": str(int(generateKey(tm.time() * 10000))),
@@ -737,7 +737,7 @@ def proses_notifikasi(e = None):
                     }
                     db_notifikasiIn.update(notifikasi_update, all_itemsPanen[i]['key'])
             elif (now_jakarta.date() == datetime.strptime((all_itemsPanen[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() + relativedelta(days=+1)):
-                if (now_jakarta >= datetime.combine(now_jakarta.date(), time(3, 1, 00)).astimezone(jakarta) and now_jakarta <= datetime.combine(now_jakarta.date(), time(4, 2, 00)).astimezone(jakarta) and all_itemsPanen[i]['waktu'] == "H-1"):
+                if (now_jakarta >= datetime.combine(now_jakarta.date(), time(3, 00, 00)).astimezone(jakarta) and now_jakarta <= datetime.combine(now_jakarta.date(), time(4, 00, 00)).astimezone(jakarta) and all_itemsPanen[i]['waktu'] == "H-1"):
                     outputNotifikasiPanen = {
                         "username": all_itemsPanen[i]['username'],
                         "key": str(int(generateKey(tm.time() * 10000))),
@@ -753,7 +753,7 @@ def proses_notifikasi(e = None):
                     }
                     db_notifikasiIn.update(notifikasi_update, all_itemsPanen[i]['key'])
             elif (now_jakarta.date() == datetime.strptime((all_itemsPanen[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() + relativedelta(days=+2)) and all_itemsPanen[i]['waktu'] == "H-Day":
-                if (now_jakarta >= datetime.combine(now_jakarta.date(), time(3, 1, 00)).astimezone(jakarta) and now_jakarta <= datetime.combine(now_jakarta.date(), time(4, 00, 00)).astimezone(jakarta) and all_itemsPanen[i]['waktu'] == "H-Day"):
+                if (now_jakarta >= datetime.combine(now_jakarta.date(), time(3, 00, 00)).astimezone(jakarta) and now_jakarta <= datetime.combine(now_jakarta.date(), time(4, 00, 00)).astimezone(jakarta) and all_itemsPanen[i]['waktu'] == "H-Day"):
                     outputNotifikasiPanen = {
                         "username": all_itemsPanen[i]['username'],
                         "key": str(int(generateKey(tm.time() * 10000))),
@@ -803,7 +803,7 @@ def proses_notifikasi(e = None):
                         db_notifikasiIn.update(notifikasi_update, havePanen.items[0]['key'])
             else:
                 if (now_jakarta.date() == datetime.strptime((all_itemsRestock[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date()):
-                    if (now_jakarta >= datetime.combine(now_jakarta.date(), time(3, 2, 00)).astimezone(jakarta) and now_jakarta <= datetime.combine(now_jakarta.date(), time(4, 3, 00)).astimezone(jakarta) and all_itemsRestock[i]['waktu'] == "H-1"):
+                    if (now_jakarta >= datetime.combine(now_jakarta.date(), time(3, 00, 00)).astimezone(jakarta) and now_jakarta <= datetime.combine(now_jakarta.date(), time(4, 00, 00)).astimezone(jakarta) and all_itemsRestock[i]['waktu'] == "H-1"):
                         outputNotifikasiRestock = {
                             "username": all_itemsRestock[i]['username'],
                             "key": str(int(generateKey(tm.time() * 10000))),
@@ -819,7 +819,7 @@ def proses_notifikasi(e = None):
                         }
                         db_notifikasiIn.update(notifikasi_update, all_itemsRestock[i]['key'])
                 elif (now_jakarta.date() == datetime.strptime((all_itemsRestock[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date()  + relativedelta(days=+1)):
-                    if (now_jakarta >= datetime.combine(now_jakarta.date(), time(3, 2, 00)).astimezone(jakarta) and now_jakarta <= datetime.combine(now_jakarta.date(), time(4, 3, 00)).astimezone(jakarta) and all_itemsRestock[i]['waktu'] == "H-Day"):
+                    if (now_jakarta >= datetime.combine(now_jakarta.date(), time(3, 00, 00)).astimezone(jakarta) and now_jakarta <= datetime.combine(now_jakarta.date(), time(4, 00, 00)).astimezone(jakarta) and all_itemsRestock[i]['waktu'] == "H-Day"):
                         outputNotifikasiRestock = {
                             "username": all_itemsRestock[i]['username'],
                             "key": str(int(generateKey(tm.time() * 10000))),
