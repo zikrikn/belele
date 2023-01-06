@@ -28,20 +28,20 @@ import string
 import pytz
 
 # Deta Cron
-# from deta import App
+from deta import App
 
-# app = App(FastAPI(
-#     title="LeMES",
-#     version="1.0",
-#     prefix="/api"
-# ))
-
-
-app = FastAPI(
+app = App(FastAPI(
     title="LeMES",
     version="1.0",
     prefix="/api"
-)
+))
+
+
+# app = FastAPI(
+#     title="LeMES",
+#     version="1.0",
+#     prefix="/api"
+# )
 
 # Generate key to make the lastest record on the top.
 def generateKey(timestap):
@@ -590,7 +590,7 @@ def search(nama_kolam: str, user: UserOut = Depends(get_current_user)):
 ''''''''''''
 
 # Cron Job Deta dengan Trigger 1 menit sekali
-# @app.lib.cron()
+@app.lib.cron()
 @app.get("/proses_notifikasi", summary="Proses Notifikasi di Cron Job", tags=["methods in cron job"])
 def proses_notifikasi(e = None):
     # inT1 = time(8, 00, 00)
@@ -721,7 +721,7 @@ def proses_notifikasi(e = None):
         if (now_jakarta.date() >= datetime.strptime((all_itemsPanen[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() 
         and now_jakarta.date() <= datetime.strptime((all_itemsPanen[i]['waktu_habis']), "%m/%d/%Y, %H:%M:%S").date()):
             if (now_jakarta.date() == datetime.strptime((all_itemsPanen[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date()) :
-                if (now_jakarta >= datetime.combine(now_jakarta.date(), time(3, 00, 00)).astimezone(jakarta) and now_jakarta <= datetime.combine(now_jakarta.date(), time(4, 00, 00)).astimezone(jakarta) and all_itemsPanen[i]['waktu'] == "H-2"):
+                if (now_jakarta >= datetime.combine(now_jakarta.date(), time(3, 1, 00)).astimezone(jakarta) and now_jakarta <= datetime.combine(now_jakarta.date(), time(4, 1, 00)).astimezone(jakarta) and all_itemsPanen[i]['waktu'] == "H-2"):
                     outputNotifikasiPanen = {
                         "username": all_itemsPanen[i]['username'],
                         "key": str(int(generateKey(tm.time() * 10000))),
@@ -737,7 +737,7 @@ def proses_notifikasi(e = None):
                     }
                     db_notifikasiIn.update(notifikasi_update, all_itemsPanen[i]['key'])
             elif (now_jakarta.date() == datetime.strptime((all_itemsPanen[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() + relativedelta(days=+1)):
-                if (now_jakarta >= datetime.combine(now_jakarta.date(), time(3, 00, 00)).astimezone(jakarta) and now_jakarta <= datetime.combine(now_jakarta.date(), time(4, 00, 00)).astimezone(jakarta) and all_itemsPanen[i]['waktu'] == "H-1"):
+                if (now_jakarta >= datetime.combine(now_jakarta.date(), time(3, 1, 00)).astimezone(jakarta) and now_jakarta <= datetime.combine(now_jakarta.date(), time(4, 1, 00)).astimezone(jakarta) and all_itemsPanen[i]['waktu'] == "H-1"):
                     outputNotifikasiPanen = {
                         "username": all_itemsPanen[i]['username'],
                         "key": str(int(generateKey(tm.time() * 10000))),
@@ -753,7 +753,7 @@ def proses_notifikasi(e = None):
                     }
                     db_notifikasiIn.update(notifikasi_update, all_itemsPanen[i]['key'])
             elif (now_jakarta.date() == datetime.strptime((all_itemsPanen[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date() + relativedelta(days=+2)) and all_itemsPanen[i]['waktu'] == "H-Day":
-                if (now_jakarta >= datetime.combine(now_jakarta.date(), time(3, 00, 00)).astimezone(jakarta) and now_jakarta <= datetime.combine(now_jakarta.date(), time(4, 00, 00)).astimezone(jakarta) and all_itemsPanen[i]['waktu'] == "H-Day"):
+                if (now_jakarta >= datetime.combine(now_jakarta.date(), time(3, 1, 00)).astimezone(jakarta) and now_jakarta <= datetime.combine(now_jakarta.date(), time(4, 1, 00)).astimezone(jakarta) and all_itemsPanen[i]['waktu'] == "H-Day"):
                     outputNotifikasiPanen = {
                         "username": all_itemsPanen[i]['username'],
                         "key": str(int(generateKey(tm.time() * 10000))),
@@ -803,7 +803,7 @@ def proses_notifikasi(e = None):
                         db_notifikasiIn.update(notifikasi_update, havePanen.items[0]['key'])
             else:
                 if (now_jakarta.date() == datetime.strptime((all_itemsRestock[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date()):
-                    if (now_jakarta >= datetime.combine(now_jakarta.date(), time(3, 00, 00)).astimezone(jakarta) and now_jakarta <= datetime.combine(now_jakarta.date(), time(4, 00, 00)).astimezone(jakarta) and all_itemsRestock[i]['waktu'] == "H-1"):
+                    if (now_jakarta >= datetime.combine(now_jakarta.date(), time(3, 10, 00)).astimezone(jakarta) and now_jakarta <= datetime.combine(now_jakarta.date(), time(4, 10, 00)).astimezone(jakarta) and all_itemsRestock[i]['waktu'] == "H-1"):
                         outputNotifikasiRestock = {
                             "username": all_itemsRestock[i]['username'],
                             "key": str(int(generateKey(tm.time() * 10000))),
@@ -819,7 +819,7 @@ def proses_notifikasi(e = None):
                         }
                         db_notifikasiIn.update(notifikasi_update, all_itemsRestock[i]['key'])
                 elif (now_jakarta.date() == datetime.strptime((all_itemsRestock[i]['waktu_keluar']), "%m/%d/%Y, %H:%M:%S").date()  + relativedelta(days=+1)):
-                    if (now_jakarta >= datetime.combine(now_jakarta.date(), time(3, 00, 00)).astimezone(jakarta) and now_jakarta <= datetime.combine(now_jakarta.date(), time(4, 00, 00)).astimezone(jakarta) and all_itemsRestock[i]['waktu'] == "H-Day"):
+                    if (now_jakarta >= datetime.combine(now_jakarta.date(), time(3, 10, 00)).astimezone(jakarta) and now_jakarta <= datetime.combine(now_jakarta.date(), time(4, 10, 00)).astimezone(jakarta) and all_itemsRestock[i]['waktu'] == "H-Day"):
                         outputNotifikasiRestock = {
                             "username": all_itemsRestock[i]['username'],
                             "key": str(int(generateKey(tm.time() * 10000))),
@@ -989,6 +989,26 @@ def pedoman():
         detail="Laman Pedoman Kosong"
         )
     return req_pedoman.items
+
+@beritapedoman_router.get("/berita/{berita_id}")
+def cari_berita(beritapedoman_id: str):
+    req_berita = db_beritadanpedoman.fetch({"key": beritapedoman_id, "tipe": "berita"})
+    if len(req_berita.items) == 0:
+        raise HTTPException(
+        status_code=400,
+        detail="Tidak ada berita dengan id tersebut"
+        )
+    return req_berita.items[0]
+
+@beritapedoman_router.get("/pedoman/{pedoman_id}")
+def cari_berita(beritapedoman_id: str):
+    req_pedoman = db_beritadanpedoman.fetch({"key": beritapedoman_id, "tipe": "pedoman"})
+    if len(req_pedoman.items) == 0:
+        raise HTTPException(
+        status_code=400,
+        detail="Tidak ada berita dengan id tersebut"
+        )
+    return req_pedoman.items[0]
 
 app.include_router(auth_router, tags=["auth"])
 app.include_router(user_router, tags=["user"])
