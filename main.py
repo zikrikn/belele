@@ -1006,7 +1006,7 @@ def cari_berita(beritapedoman_id: str):
     if len(req_pedoman.items) == 0:
         raise HTTPException(
         status_code=400,
-        detail="Tidak ada berita dengan id tersebut"
+        detail="Tidak ada pedoman dengan id tersebut"
         )
     return req_pedoman.items[0]
 
