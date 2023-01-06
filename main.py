@@ -1001,7 +1001,7 @@ def cari_berita(beritapedoman_id: str):
     return req_berita.items[0]
 
 @beritapedoman_router.get("/pedoman/{pedoman_id}")
-def cari_berita(beritapedoman_id: str):
+def cari_pedoman(beritapedoman_id: str):
     req_pedoman = db_beritadanpedoman.fetch({"key": beritapedoman_id, "tipe": "pedoman"})
     if len(req_pedoman.items) == 0:
         raise HTTPException(
