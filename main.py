@@ -167,7 +167,7 @@ async def get_profil(user: UserOut = Depends(get_current_user)):
     return req_profil.items[0]
 
 # Return a file from the storage Drive.
-@app.get("/cdn/{id}", tags=["CDN for Photo Profile"], summary="CDN")
+@app.get("/cdn/{id}", tags=["CDN"], summary="CDN for Photo Profile")
 async def cdn(id: str):
     file = drive_photoprofile.get(id)
     if file is None:
