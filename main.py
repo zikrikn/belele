@@ -167,9 +167,18 @@ async def get_profil(user: UserOut = Depends(get_current_user)):
     return req_profil.items[0]
 
 # Return a file from the storage Drive.
-@app.get("/cdn/{id}", tags=["CDN"], summary="CDN")
+@app.get("/cdn/{id}", tags=["CDN for Photo Profile"], summary="CDN")
 async def cdn(id: str):
     file = drive_photoprofile.get(id)
+    if file is None:
+        raise HTTPException(status_code=404)
+    headers = {"Cache-Control": "public, max-age=86400"}
+    return StreamingResponse(file.iter_chunks(4096), media_type="image/jpg", headers=headers)
+
+
+@app.get("/cdn/thumbnail/{id}", tags=["CDN"], summary="CDN for Thumbnail BeritaPedoman")
+async def cdn(id: str):
+    file = drive_thumbnail.get(id)
     if file is None:
         raise HTTPException(status_code=404)
     headers = {"Cache-Control": "public, max-age=86400"}
@@ -870,7 +879,7 @@ def post_berita(berita: BeritaDanPedomanIn, user: UserOut = Depends(get_current_
         "judul_berita_dan_pedoman": berita.judul_berita_dan_pedoman,
         "tanggal_berita_dan_pedoman": now_jakarta.strftime("%m/%d/%Y, %H:%M:%S"),
         "isi_berita_dan_pedoman": berita.isi_berita_dan_pedoman,
-        "thumbnail": None
+        "thumbnail": "https://api.lemes.my.id/cdn/thumbnail/xqlavvys.jpg"
     }
 
     try:
@@ -899,7 +908,7 @@ def post_pedoman(pedoman: BeritaDanPedomanIn, user: UserOut = Depends(get_curren
         'judul_berita_dan_pedoman': pedoman.judul_berita_dan_pedoman,
         'tanggal_berita_dan_pedoman': now_jakarta.strftime("%m/%d/%Y, %H:%M:%S"),
         'isi_berita_dan_pedoman': pedoman.isi_berita_dan_pedoman,
-        'thumbnail': None
+        'thumbnail': "https://api.lemes.my.id/cdn/thumbnail/xqlavvys.jpg"
     }
 
     try:
@@ -935,10 +944,10 @@ async def post_thumbnail(beritadanpedoman_id: str, request: Request, img: Upload
     drive_thumbnail.put(file_name, file_content)
 
     thumbnail_update = {
-        "thumbnail": f"{request.base_url}cdn/{file_name}"
+        "thumbnail": f"{request.base_url}cdn/thumbnail/{file_name}"
     }
 
-    req_beritapedoman.items[0]['thumbnail'] = f"{request.base_url}cdn/{file_name}"
+    req_beritapedoman.items[0]['thumbnail'] = f"{request.base_url}cdn/thumbnail/{file_name}"
     db_beritadanpedoman.update(thumbnail_update, req_beritapedoman.items[0]['key'])
 
     return req_beritapedoman.items[0]
