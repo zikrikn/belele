@@ -36,7 +36,6 @@ import pytz
 #     prefix="/api"
 # ))
 
-
 app = FastAPI(
     title="LeMES",
     version="1.0",
