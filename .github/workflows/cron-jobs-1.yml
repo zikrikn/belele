@@ -10,4 +10,4 @@ jobs:
     steps:
       # Make an HTTP request to the REST API endpoint using the `curl` command
       - name: Send request to REST API
-        run: curl -X GET https://lele.deta.dev/proses_notifikasi
+        run: curl -X GET https://lele.deta.dev/cronjob/proses_notifikasi

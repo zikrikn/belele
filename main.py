@@ -166,7 +166,7 @@ async def get_profil(user: UserOut = Depends(get_current_user)):
     return req_profil.items[0]
 
 # Return a file from the storage Drive.
-@app.get("/cdn/{id}", tags=["CDN"], summary="CDN for Photo Profile")
+@app.get("/cdn/photoprofile/{id}", tags=["CDN"], summary="CDN for Photo Profile")
 async def cdn(id: str):
     file = drive_photoprofile.get(id)
     if file is None:
@@ -199,11 +199,11 @@ async def upload_photo_profile(request: Request, img: UploadFile, user: UserOut 
     drive_photoprofile.put(file_name, file_content)
     
     update = {
-        'photoprofile': f"{request.base_url}cdn/{file_name}"
+        'photoprofile': f"{request.base_url}cdn/photoprofile/{file_name}"
     }
 
     update_photoprofile = req_user.items[0]
-    update_photoprofile['photoprofile'] = f"{request.base_url}cdn/{file_name}"
+    update_photoprofile['photoprofile'] = f"{request.base_url}cdn/photoprofile/{file_name}"
     db_user.update(update, update_photoprofile['key'])
     
     return update_photoprofile
@@ -530,7 +530,7 @@ def restock_ulang(nama_kolam: str, stock_pakan: float, user: UserOut = Depends(g
     return assign_restock
 
 
-@app.get("/kurangi_stock_pakan_harian", summary="Menggurangi Stok Pakan Harian", tags=["methods in cron job"])
+@app.get("/cronjob/kurangi_stock_pakan_harian", summary="Menggurangi Stok Pakan Harian", tags=["methods in cron job"])
 def kurangi_stock_pakan_harian():
     req_kolam_notif = db_notifikasiIn.fetch([{"waktu?ne": "Done"}, {"waktu?ne": "Reminder"}, {"waktu?ne": "Stop"}])
     all_req_kolam_notif = req_kolam_notif.items
@@ -599,7 +599,7 @@ def search(nama_kolam: str, user: UserOut = Depends(get_current_user)):
 
 # Cron Job Deta dengan Trigger 1 menit sekali
 # @app.lib.cron()
-@app.get("/proses_notifikasi", summary="Proses Notifikasi di Cron Job", tags=["methods in cron job"])
+@app.get("/cronjob/proses_notifikasi", summary="Proses Notifikasi di Cron Job", tags=["methods in cron job"])
 def proses_notifikasi(e = None):
     # inT1 = time(8, 00, 00)
     # inT2 = time(12, 00, 00)
