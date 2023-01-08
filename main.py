@@ -530,7 +530,7 @@ def restock_ulang(nama_kolam: str, stock_pakan: float, user: UserOut = Depends(g
     return assign_restock
 
 
-@app.post("/kurangi_stock_pakan_harian", summary="Menggurangi Stok Pakan Harian", tags=["methods in cron job"])
+@app.get("/kurangi_stock_pakan_harian", summary="Menggurangi Stok Pakan Harian", tags=["methods in cron job"])
 def kurangi_stock_pakan_harian():
     req_kolam_notif = db_notifikasiIn.fetch([{"waktu?ne": "Done"}, {"waktu?ne": "Reminder"}, {"waktu?ne": "Stop"}])
     all_req_kolam_notif = req_kolam_notif.items
