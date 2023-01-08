@@ -952,15 +952,15 @@ async def post_thumbnail(beritadanpedoman_id: str, request: Request, img: Upload
     return req_beritapedoman.items[0]
 
 # Menghapus berita dan pedoman berdasarkan id
-@admin_router.delete("/delete/beritadanpedoman", summary="Delete Berita atau Pedoman")
-def delete_beritapedoman(beritadanpedoman_id: str, user: UserOut = Depends(get_current_user)):
+@admin_router.delete("/delete/beritapedoman", summary="Delete Berita atau Pedoman")
+def delete_beritapedoman(beritapedoman_id: str, user: UserOut = Depends(get_current_user)):
     if user.username != "admin":
         raise HTTPException(
         status_code=404,
         detail="You're not an admin, you don't have access to this page"
         )
         
-    req_pedoman = db_beritadanpedoman.fetch({"key": beritadanpedoman_id})
+    req_pedoman = db_beritadanpedoman.fetch({"key": beritapedoman_id})
 
     if req_pedoman.items == []:
         raise HTTPException(
